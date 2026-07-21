@@ -27,6 +27,7 @@ export function FeatureStory() {
                 src={feature.media.src}
                 alt={feature.media.alt}
                 label={feature.media.label}
+                portrait={feature.media.portrait}
               />
             )}
           </article>

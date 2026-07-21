@@ -369,7 +369,8 @@ main {
   border-radius: 48px;
 }
 
-.media-frame img {
+.media-frame img,
+.media-frame video {
   display: block;
   width: 100%;
   height: 100%;
@@ -500,6 +501,22 @@ main {
   gap: clamp(2rem, 7vw, 7rem);
 }
 
+.tutorial-step__media {
+  min-width: 0;
+  display: grid;
+  gap: 1.25rem;
+  justify-items: center;
+}
+
+.tutorial-step__media--sequence {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+}
+
+.tutorial-step__media--sequence .media-frame--portrait {
+  width: 100%;
+}
+
 .tutorial-step:nth-child(even) {
   grid-template-columns: minmax(0, 1.38fr) minmax(220px, 0.62fr);
 }
@@ -509,7 +526,7 @@ main {
   grid-row: 1;
 }
 
-.tutorial-step:nth-child(even) .media-frame {
+.tutorial-step:nth-child(even) .tutorial-step__media {
   grid-column: 1;
   grid-row: 1;
 }
@@ -690,7 +707,7 @@ main {
   .feature:nth-child(even) .feature__copy,
   .feature:nth-child(even) .media-frame,
   .tutorial-step:nth-child(even) .tutorial-step__copy,
-  .tutorial-step:nth-child(even) .media-frame {
+  .tutorial-step:nth-child(even) .tutorial-step__media {
     grid-column: 1;
     grid-row: auto;
   }
@@ -703,8 +720,12 @@ main {
     order: 1;
   }
 
-  .tutorial-step .media-frame {
+  .tutorial-step .tutorial-step__media {
     order: 2;
+  }
+
+  .tutorial-step__media--sequence {
+    grid-template-columns: 1fr;
   }
 
   .download-cta {

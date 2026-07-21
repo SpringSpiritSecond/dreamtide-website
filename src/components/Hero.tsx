@@ -23,9 +23,9 @@ export function Hero({ releaseState }: { releaseState: ReleaseState }) {
           DREAM / TIDE
         </span>
         <MediaFrame
-          src="media/hero/home.webp"
-          alt="梦潮 App 首页"
-          label="梦潮首页主截图"
+          src="media/首页.mp4"
+          alt="梦潮 App 首页操作演示"
+          label="梦潮首页"
           eager
           portrait
         />

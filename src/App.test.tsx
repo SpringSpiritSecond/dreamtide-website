@@ -40,4 +40,30 @@ describe('App', () => {
     ).toBeInTheDocument();
     expect(screen.getAllByRole('listitem')).toHaveLength(4);
   });
+
+  it('uses every supplied product media asset', () => {
+    const { container } = render(<App />);
+    const sources = Array.from(
+      container.querySelectorAll<HTMLImageElement | HTMLVideoElement>(
+        'img, video',
+      ),
+      (element) => decodeURI(element.getAttribute('src') ?? ''),
+    );
+
+    for (const filename of [
+      '首页.mp4',
+      '不谈人间事.mp4',
+      '春梦了无痕.mp4',
+      '编辑-隐.jpg',
+      '档案.jpg',
+      '档案 筛选.jpg',
+      '档案 正文.mp4',
+      '词云.mp4',
+      '分享.png',
+    ]) {
+      expect(
+        sources.some((src) => src.endsWith(`/media/${filename}`)),
+      ).toBe(true);
+    }
+  });
 });

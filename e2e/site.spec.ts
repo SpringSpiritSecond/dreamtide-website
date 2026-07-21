@@ -36,10 +36,19 @@ test('mobile navigation reaches the tutorial with a touch-sized control', async 
   await expect(page.locator('#guide')).toBeInViewport();
 });
 
-test('missing media keeps a visible branded placeholder', async ({ page }) => {
+test('uses supplied media while preserving the missing install fallback', async ({
+  page,
+}) => {
   await page.goto('');
-  await expect(page.getByText('梦潮首页主截图')).toBeVisible();
-  await expect(page.getByText('截图 / GIF 待替换').first()).toBeVisible();
+
+  await expect(
+    page.locator('video[aria-label="梦潮 App 首页操作演示"]'),
+  ).toBeVisible();
+  await page
+    .getByRole('heading', { name: '下载并安装' })
+    .scrollIntoViewIfNeeded();
+  await expect(page.getByText('01 · 下载与安装')).toBeVisible();
+  await expect(page.getByText('媒体素材待补充')).toBeVisible();
 });
 
 test('desktop hero uses the editorial two-column composition', async ({

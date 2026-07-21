@@ -1,4 +1,4 @@
-import { ImageIcon } from 'lucide-react';
+import { ImageIcon, VideoIcon } from 'lucide-react';
 import { useState } from 'react';
 
 export type MediaFrameProps = {
@@ -18,13 +18,30 @@ export function MediaFrame({
 }: MediaFrameProps) {
   const [failed, setFailed] = useState(false);
   const url = `${import.meta.env.BASE_URL}${src.replace(/^\/+/, '')}`;
+  const isVideo = /\.mp4(?:$|[?#])/i.test(src);
+  const reduceMotion =
+    window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
+  const FallbackIcon = isVideo ? VideoIcon : ImageIcon;
 
   return (
     <figure
       className={`media-frame${portrait ? ' media-frame--portrait' : ''}`}
       data-state={failed ? 'missing' : 'ready'}
     >
-      {!failed && (
+      {!failed && isVideo && (
+        <video
+          src={url}
+          aria-label={alt}
+          autoPlay={!reduceMotion}
+          controls={reduceMotion}
+          muted
+          loop
+          playsInline
+          preload={eager ? 'metadata' : 'none'}
+          onError={() => setFailed(true)}
+        />
+      )}
+      {!failed && !isVideo && (
         <img
           src={url}
           alt={alt}
@@ -35,9 +52,9 @@ export function MediaFrame({
       )}
       {failed && (
         <figcaption className="media-frame__fallback">
-          <ImageIcon aria-hidden="true" size={24} strokeWidth={1.5} />
+          <FallbackIcon aria-hidden="true" size={24} strokeWidth={1.5} />
           <strong>{label}</strong>
-          <span>截图 / GIF 待替换</span>
+          <span>媒体素材待补充</span>
         </figcaption>
       )}
     </figure>

@@ -17,11 +17,23 @@ export function Tutorial() {
               <h3>{step.title}</h3>
               <p>{step.description}</p>
             </div>
-            <MediaFrame
-              src={step.media.src}
-              alt={step.media.alt}
-              label={step.media.label}
-            />
+            <div
+              className={`tutorial-step__media${
+                step.media.length > 1
+                  ? ' tutorial-step__media--sequence'
+                  : ''
+              }`}
+            >
+              {step.media.map((media) => (
+                <MediaFrame
+                  key={media.src}
+                  src={media.src}
+                  alt={media.alt}
+                  label={media.label}
+                  portrait={media.portrait}
+                />
+              ))}
+            </div>
           </li>
         ))}
       </ol>
