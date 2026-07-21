@@ -447,7 +447,7 @@ main {
   grid-row: 1;
 }
 
-.feature:nth-child(even) .media-frame {
+.feature:nth-child(even) .feature__media {
   grid-column: 1;
   grid-row: 1;
 }
@@ -471,9 +471,39 @@ main {
 }
 
 .feature__copy p {
-  margin-bottom: 0;
   color: var(--muted);
   line-height: 1.9;
+}
+
+.feature__steps {
+  margin: 1.4rem 0 0;
+  padding-left: 1.4rem;
+  color: var(--muted);
+}
+
+.feature__steps li {
+  padding-left: 0.35rem;
+  line-height: 1.8;
+}
+
+.feature__steps li + li {
+  margin-top: 0.65rem;
+}
+
+.feature__media {
+  min-width: 0;
+  display: grid;
+  gap: 1.25rem;
+  justify-items: center;
+}
+
+.feature__media--sequence {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+.feature__media--sequence .media-frame--portrait {
+  width: 100%;
 }
 
 .tutorial {
@@ -705,7 +735,7 @@ main {
 
   .feature:nth-child(even) .feature__number,
   .feature:nth-child(even) .feature__copy,
-  .feature:nth-child(even) .media-frame,
+  .feature:nth-child(even) .feature__media,
   .tutorial-step:nth-child(even) .tutorial-step__copy,
   .tutorial-step:nth-child(even) .tutorial-step__media {
     grid-column: 1;
@@ -714,6 +744,10 @@ main {
 
   .feature__number {
     font-size: 4.5rem;
+  }
+
+  .feature__media--sequence {
+    grid-template-columns: 1fr;
   }
 
   .tutorial-step .tutorial-step__copy {

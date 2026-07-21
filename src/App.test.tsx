@@ -21,8 +21,8 @@ describe('App', () => {
     expect(screen.getByRole('contentinfo')).toBeInTheDocument();
   });
 
-  it('presents the four real product capabilities and tutorial steps', () => {
-    render(<App />);
+  it('presents the real product capabilities and four tutorial steps', () => {
+    const { container } = render(<App />);
 
     expect(
       screen.getByRole('heading', {
@@ -30,7 +30,7 @@ describe('App', () => {
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('heading', { name: '趁记忆还清晰，写下梦' }),
+      screen.getByRole('heading', { name: '写下并保存一场梦' }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole('heading', { name: '梦留在你的设备里' }),
@@ -38,7 +38,30 @@ describe('App', () => {
     expect(
       screen.getByRole('heading', { name: '从写下第一场梦开始' }),
     ).toBeInTheDocument();
-    expect(screen.getAllByRole('listitem')).toHaveLength(4);
+    expect(container.querySelectorAll('.tutorial-step')).toHaveLength(4);
+  });
+
+  it('explains both privacy browsing modes beside their videos', () => {
+    render(<App />);
+
+    const privacyHeading = screen.getByRole('heading', {
+      name: '隐私浏览时，决定哪些内容被看见',
+    });
+    const privacyArticle = privacyHeading.closest('article');
+
+    expect(privacyArticle).not.toBeNull();
+    expect(
+      privacyArticle?.querySelector(
+        'video[src$="/media/不谈人间事.mp4"]',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      privacyArticle?.querySelector(
+        'video[src$="/media/春梦了无痕.mp4"]',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/显、隐、化/)).toBeVisible();
+    expect(screen.getByText(/删除动画隐藏，打字动画恢复/)).toBeVisible();
   });
 
   it('uses every supplied product media asset', () => {

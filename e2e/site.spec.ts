@@ -47,8 +47,11 @@ test('uses supplied media while preserving the missing install fallback', async 
   await page
     .getByRole('heading', { name: '下载并安装' })
     .scrollIntoViewIfNeeded();
-  await expect(page.getByText('01 · 下载与安装')).toBeVisible();
-  await expect(page.getByText('媒体素材待补充')).toBeVisible();
+  const installStep = page
+    .getByRole('listitem')
+    .filter({ has: page.getByRole('heading', { name: '下载并安装' }) });
+  await expect(installStep.getByText('01 · 下载与安装')).toBeVisible();
+  await expect(installStep.getByText('媒体素材待补充')).toBeVisible();
 });
 
 test('desktop hero uses the editorial two-column composition', async ({

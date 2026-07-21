@@ -21,14 +21,28 @@ export function FeatureStory() {
             <div className="feature__copy">
               <h3>{feature.title}</h3>
               <p>{feature.description}</p>
+              <ol className="feature__steps">
+                {feature.steps.map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ol>
             </div>
             {feature.media && (
-              <MediaFrame
-                src={feature.media.src}
-                alt={feature.media.alt}
-                label={feature.media.label}
-                portrait={feature.media.portrait}
-              />
+              <div
+                className={`feature__media${
+                  feature.media.length > 1 ? ' feature__media--sequence' : ''
+                }`}
+              >
+                {feature.media.map((media) => (
+                  <MediaFrame
+                    key={media.src}
+                    src={media.src}
+                    alt={media.alt}
+                    label={media.label}
+                    portrait={media.portrait}
+                  />
+                ))}
+              </div>
             )}
           </article>
         ))}
