@@ -14,7 +14,7 @@ describe('App', () => {
     expect(
       screen.getByRole('heading', {
         level: 1,
-        name: '梦醒以后，仍有迹可循',
+        name: '潮落有迹，梦醒留痕',
       }),
     ).toBeInTheDocument();
     expect(screen.getByRole('main')).toBeInTheDocument();

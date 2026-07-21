@@ -14,7 +14,7 @@ for (const width of [375, 768, 1024, 1440]) {
     await expect(
       page.getByRole('heading', {
         level: 1,
-        name: '梦醒以后，仍有迹可循',
+        name: '潮落有迹，梦醒留痕',
       }),
     ).toBeVisible();
   });
