@@ -34,13 +34,19 @@ type GithubRelease = {
   assets?: unknown;
 };
 
+type ApkAsset = {
+  name: string;
+  browser_download_url: string;
+  size: number;
+};
+
 export function formatBytes(bytes: number) {
   if (bytes <= 0) return '0 B';
   if (bytes < 1_048_576) return `${Math.round(bytes / 1024)} KB`;
   return `${(bytes / 1_048_576).toFixed(1)} MB`;
 }
 
-function isApkAsset(asset: GithubAsset): asset is Required<GithubAsset> {
+function isApkAsset(asset: GithubAsset): asset is ApkAsset {
   return (
     typeof asset.name === 'string' &&
     asset.name.toLowerCase().endsWith('.apk') &&
