@@ -13,27 +13,24 @@ for (const width of [375, 768, 1024, 1440]) {
   });
 }
 
-test('mobile navigation reaches the guide with a touch-sized control', async ({ page }) => {
-  await page.setViewportSize({ width: 375, height: 760 });
+test('navigation opens focused subpages', async ({ page }) => {
   await page.goto('');
-  const menu = page.getByRole('button', { name: '打开导航' });
-  const bounds = await menu.boundingBox();
-  expect(bounds?.width).toBeGreaterThanOrEqual(44);
-  expect(bounds?.height).toBeGreaterThanOrEqual(44);
-  await menu.click();
-  await page.getByRole('link', { name: '使用方法' }).click();
-  await expect(page.locator('#guide')).toBeInViewport();
+  await page.getByRole('link', { name: '功能' }).click();
+  await expect(page.getByRole('heading', { name: '从一段刚醒的记忆，到一份完整的梦境档案。' })).toBeVisible();
+  await page.getByRole('link', { name: '使用指南' }).click();
+  await expect(page.getByRole('heading', { name: '下载并安装梦潮' })).toBeVisible();
 });
 
-test('uses supplied product media', async ({ page }) => {
-  await page.goto('');
-  await expect(page.locator('video[aria-label="梦潮 App 首页操作演示"]')).toBeVisible();
-  await page.getByRole('heading', { name: '整理并分享' }).scrollIntoViewIfNeeded();
-  await expect(page.getByRole('img', { name: '梦潮生成的梦境分享卡片' })).toBeVisible();
+test('gallery switches to the supplied word cloud video', async ({ page }) => {
+  await page.goto('#/features');
+  await page.getByRole('tab', { name: /词云回看/ }).click();
+  await expect(page.locator('video[aria-label="通过词云回看相关梦境"]')).toBeVisible();
+  await expect(page.locator('.feature-card img, .feature-card video')).toHaveCount(0);
 });
 
-test('desktop hero uses the editorial two-column composition', async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('');
-  await expect(page.locator('.hero')).toHaveCSS('display', 'grid');
+test('install section uses a download control and no media placeholder', async ({ page }) => {
+  await page.goto('#/guide');
+  const install = page.getByRole('heading', { name: '下载并安装梦潮' }).locator('..').locator('..');
+  await expect(install.locator('.download-panel')).toBeVisible();
+  await expect(install.locator('img, video')).toHaveCount(0);
 });

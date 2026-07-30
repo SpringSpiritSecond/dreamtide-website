@@ -1,36 +1,48 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 
 vi.mock('./hooks/useLatestRelease', () => ({
   useLatestRelease: () => ({ status: 'unavailable', reason: 'no-release' }),
 }));
 
+function openPage(route: string) {
+  act(() => {
+    window.location.hash = route;
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+  });
+}
+
 describe('App', () => {
-  it('introduces Dreamtide and exposes the primary page landmarks', () => {
+  beforeEach(() => { window.location.hash = '#/'; });
+
+  it('keeps the home page concise and links to two focused subpages', () => {
     render(<App />);
-    expect(screen.getByRole('banner')).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 1, name: '潮落有迹，梦醒留痕。' })).toBeInTheDocument();
-    expect(screen.getByRole('main')).toBeInTheDocument();
-    expect(screen.getByRole('contentinfo')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /浏览全部功能/ })).toHaveAttribute('href', '#/features');
+    expect(screen.getByRole('link', { name: /打开使用指南/ })).toHaveAttribute('href', '#/guide');
+    expect(screen.queryByRole('heading', { name: '写下并保存一场梦' })).not.toBeInTheDocument();
+    expect(document.querySelector('.hero img, .hero video')).not.toBeInTheDocument();
   });
 
-  it('presents product capabilities, tutorial, privacy and FAQ', () => {
-    const { container } = render(<App />);
-    expect(screen.getByRole('heading', { name: '把散落的片段，慢慢收回来' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '写下并保存一场梦' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '你的梦，首先属于你。' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '四步，开始保存你的梦境档案' })).toBeInTheDocument();
-    expect(container.querySelectorAll('.tutorial-step')).toHaveLength(4);
-    expect(container.querySelectorAll('.faq details')).toHaveLength(4);
-  });
-
-  it('explains both privacy browsing modes beside their videos', () => {
+  it('uses one switchable gallery without repeating feature images', () => {
     render(<App />);
-    const heading = screen.getByRole('heading', { name: '决定哪些内容被看见' });
-    const article = heading.closest('article');
-    expect(article?.querySelector('video[src$="/media/不谈人间事.mp4"]')).toBeInTheDocument();
-    expect(article?.querySelector('video[src$="/media/春梦了无痕.mp4"]')).toBeInTheDocument();
-    expect(screen.getByText(/隐藏原名或显示化名/)).toBeVisible();
+    openPage('#/features');
+    expect(screen.getAllByRole('tab')).toHaveLength(9);
+    expect(document.querySelectorAll('.product-gallery__stage img, .product-gallery__stage video')).toHaveLength(1);
+    expect(document.querySelectorAll('.feature-card img, .feature-card video')).toHaveLength(0);
+    fireEvent.click(screen.getByRole('tab', { name: /词云回看/ }));
+    expect(document.querySelector('video[src$="/media/词云.mp4"]')).toBeInTheDocument();
+  });
+
+  it('uses a download control and a detailed text-only guide', () => {
+    render(<App />);
+    openPage('#/guide');
+    const install = screen.getByRole('heading', { name: '下载并安装梦潮' }).closest('section');
+    expect(install?.querySelector('.download-panel')).toBeInTheDocument();
+    expect(install?.querySelector('img, video')).not.toBeInTheDocument();
+    expect(document.querySelectorAll('.guide-page')).toHaveLength(10);
+    expect(screen.getByRole('heading', { name: '“注”与 AI 释梦' })).toBeInTheDocument();
+    expect(document.querySelector('.detailed-guide img, .detailed-guide video')).not.toBeInTheDocument();
   });
 });

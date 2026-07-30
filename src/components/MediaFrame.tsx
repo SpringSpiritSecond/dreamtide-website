@@ -12,7 +12,7 @@ export function MediaFrame({ src, alt, label, eager = false, portrait = false }:
   return (
     <figure className={`media-frame${portrait ? ' media-frame--portrait' : ''}`} data-state={failed ? 'missing' : 'ready'}>
       {!failed && isVideo && <video src={url} aria-label={alt} autoPlay={!reduceMotion} controls={reduceMotion}
-        muted loop playsInline preload={eager ? 'metadata' : 'none'} onError={() => setFailed(true)} />}
+        muted loop playsInline preload="metadata" onError={() => setFailed(true)} />}
       {!failed && !isVideo && <img src={url} alt={alt} loading={eager ? 'eager' : 'lazy'}
         fetchPriority={eager ? 'high' : 'auto'} onError={() => setFailed(true)} />}
       {failed && <figcaption className="media-frame__fallback"><FallbackIcon aria-hidden="true" size={24} strokeWidth={1.5} />
