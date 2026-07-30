@@ -6,7 +6,10 @@ export function FeatureStory() {
     <section id="features" className="feature-story" aria-labelledby="features-title">
       <div className="section-intro">
         <p className="eyebrow">从记录到回看</p>
-        <h2 id="features-title">把散落的片段，<br />慢慢收回来</h2>
+        <h2 id="features-title">
+          <span>把散落的片段，</span>
+          <span>慢慢收回来</span>
+        </h2>
         <p>不是复杂的管理工具，而是一条顺着记忆自然展开的路径。</p>
       </div>
       <div className="feature-story__list">

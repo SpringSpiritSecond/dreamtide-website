@@ -6,7 +6,10 @@ export function Tutorial() {
     <section id="guide" className="tutorial" aria-labelledby="guide-title">
       <div className="section-intro section-intro--guide">
         <p className="eyebrow">第一次使用梦潮</p>
-        <h2 id="guide-title">四步，开始保存<br />你的梦境档案</h2>
+        <h2 id="guide-title">
+          <span>四步，开始保存</span>
+          <span>你的梦境档案</span>
+        </h2>
         <p>不需要先学会复杂的分类方法。先写下来，剩下的可以慢慢完成。</p>
       </div>
       <ol className="tutorial__list">

@@ -6,7 +6,7 @@ import { Tutorial } from './components/Tutorial';
 import { useLatestRelease } from './hooks/useLatestRelease';
 
 const values = [
-  { mark: '01', title: '醒来就写', text: '用最短的路径接住刚醒时仍然鲜活的画面、人物和情绪。' },
+  { mark: '01', title: '醒来就写', text: '用最短的路径留住刚醒时仍然鲜活的画面、人物和情绪。' },
   { mark: '02', title: '慢慢整理', text: '标签、注记和人物线索，让散落的梦逐渐长成一份私人档案。' },
   { mark: '03', title: '重新遇见', text: '从日历、筛选和词云出发，在某一天再次走进曾经的梦。' },
 ];
@@ -42,8 +42,11 @@ export default function App() {
         <section className="manifesto" aria-labelledby="manifesto-title">
           <p className="eyebrow">为什么记录梦</p>
           <div>
-            <h2 id="manifesto-title">有些梦不需要被解释，<br />只值得被好好留下。</h2>
-            <p>梦潮不急着给梦下定义。它更像一只放在床边的容器：先接住那些容易消散的细节，再把时间、人物与感受轻轻串起来。</p>
+            <h2 id="manifesto-title">
+              <span>记录梦的原貌，</span>
+              <span>也探索梦的回响。</span>
+            </h2>
+            <p>梦潮先帮你留住容易消散的细节，再通过人物、情绪、时间与释梦功能，陪你重新理解梦境中反复出现的线索。</p>
           </div>
           <span className="manifesto__glyph" aria-hidden="true">梦</span>
         </section>
@@ -69,7 +72,10 @@ export default function App() {
         <section id="faq" className="faq" aria-labelledby="faq-title">
           <div className="section-intro">
             <p className="eyebrow">常见问题</p>
-            <h2 id="faq-title">开始之前，<br />你可能还想知道</h2>
+            <h2 id="faq-title">
+              <span>开始之前，</span>
+              <span>你可能还想知道</span>
+            </h2>
           </div>
           <div className="faq__list">
             {faqs.map(([question, answer], index) => (
@@ -83,7 +89,10 @@ export default function App() {
 
         <section id="download" className="download-cta" aria-labelledby="download-title">
           <p className="eyebrow">Android</p>
-          <h2 id="download-title">下一场梦，<br />醒来就记下。</h2>
+          <h2 id="download-title">
+            <span>下一场梦，</span>
+            <span>醒来就记下。</span>
+          </h2>
           <p>免费使用，无需注册。梦境与设置保存在当前设备，请记得定期导出备份。</p>
           <DownloadPanel state={releaseState} variant="footer" />
         </section>

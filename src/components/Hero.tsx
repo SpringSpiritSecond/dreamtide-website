@@ -7,8 +7,11 @@ export function Hero({ releaseState }: { releaseState: ReleaseState }) {
     <section className="hero" aria-labelledby="hero-title">
       <div className="hero__copy">
         <p className="eyebrow">本地优先的 Android 梦境记录应用</p>
-        <h1 id="hero-title">潮落有迹，<br /><em>梦醒留痕。</em></h1>
-        <p className="hero__lead">在梦消散以前，接住它。记录画面与情绪，整理人物和片段，再从日历、档案与词云里慢慢回看。</p>
+        <h1 id="hero-title">
+          <span>潮落有迹，</span>
+          <em>梦醒留痕。</em>
+        </h1>
+        <p className="hero__lead">在梦消散以前，留下它。记录画面与情绪，整理人物和片段，再从日历、档案、词云与释梦中慢慢回看和理解。</p>
         <div className="hero__actions">
           <DownloadPanel state={releaseState} />
           <a className="button button--quiet" href="#features">先了解梦潮</a>
