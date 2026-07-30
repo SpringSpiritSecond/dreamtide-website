@@ -9,15 +9,26 @@ for (const width of [375, 768, 1024, 1440]) {
       content: document.documentElement.scrollWidth,
     }));
     expect(sizes.content).toBeLessThanOrEqual(sizes.viewport);
-    await expect(page.getByRole('heading', { level: 1, name: '潮落有迹，梦醒留痕。' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: /潮落有迹.*梦醒留痕。/ })).toBeVisible();
   });
 }
 
 test('navigation opens focused subpages', async ({ page }) => {
   await page.goto('');
-  await page.getByRole('link', { name: '功能' }).click();
-  await expect(page.getByRole('heading', { name: '从一段刚醒的记忆，到一份完整的梦境档案。' })).toBeVisible();
-  await page.getByRole('link', { name: '使用指南' }).click();
+  await page.getByRole('link', { name: '功能', exact: true }).click();
+  await expect(page.getByRole('heading', { name: /从一段刚醒的记忆.*到一份完整的梦境档案。/ })).toBeVisible();
+  await page.getByRole('link', { name: '使用指南', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '下载并安装梦潮' })).toBeVisible();
+});
+
+test('home shows product media and prominent routes at both ends', async ({ page }) => {
+  await page.goto('');
+  await expect(page.locator('video[aria-label="梦潮首页与刻梦入口演示"]')).toBeVisible();
+  await expect(page.getByRole('link', { name: '深入了解梦潮的完整功能' })).toBeVisible();
+  const tutorial = page.getByRole('link', { name: '进入梦潮完整使用教程' });
+  await tutorial.scrollIntoViewIfNeeded();
+  await expect(tutorial).toBeVisible();
+  await tutorial.click();
   await expect(page.getByRole('heading', { name: '下载并安装梦潮' })).toBeVisible();
 });
 

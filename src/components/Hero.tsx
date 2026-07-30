@@ -1,5 +1,7 @@
+import { ArrowRight } from 'lucide-react';
 import type { ReleaseState } from '../lib/githubRelease';
 import { DownloadPanel } from './DownloadPanel';
+import { MediaFrame } from './MediaFrame';
 
 export function Hero({ releaseState }: { releaseState: ReleaseState }) {
   return (
@@ -13,7 +15,9 @@ export function Hero({ releaseState }: { releaseState: ReleaseState }) {
         <p className="hero__lead">在梦消散以前，留下它。记录画面与情绪，整理人物和片段，再从日历、档案、词云与释梦中慢慢回看和理解。</p>
         <div className="hero__actions">
           <DownloadPanel state={releaseState} />
-          <a className="button button--quiet" href="#/features">先了解梦潮</a>
+          <a className="button button--discover" href="#/features">
+            了解梦潮 <ArrowRight aria-hidden="true" size={19} />
+          </a>
         </div>
         <div className="hero__notes" aria-label="产品特点">
           <span>无需账号</span><span>数据本地保存</span><span>支持导出备份</span>
@@ -22,11 +26,14 @@ export function Hero({ releaseState }: { releaseState: ReleaseState }) {
       <div className="hero__visual">
         <span className="hero__stamp" aria-hidden="true">DREAM / TIDE</span>
         <div className="hero__orb" aria-hidden="true" />
-        <div className="hero__dream-card" aria-hidden="true">
-          <span>07 / 30</span>
-          <p>昨夜的潮水<br />漫过旧楼的窗沿</p>
-          <small>梦潮 · 一份只属于你的梦境档案</small>
-        </div>
+        <MediaFrame
+          src="media/首页.mp4"
+          alt="梦潮首页与刻梦入口演示"
+          label="梦潮首页"
+          portrait
+          eager
+        />
+        <p className="hero__caption"><span>01</span> 醒来，从这里刻下第一场梦</p>
       </div>
     </section>
   );

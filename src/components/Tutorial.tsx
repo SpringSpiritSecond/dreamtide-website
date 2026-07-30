@@ -21,7 +21,7 @@ const guidePages = [
       ['暂存', '保存当前正文和日期，但不把它变成正式梦境，也不会离开当前页面。'],
       ['正式保存 / 保存这场梦', '生成正式记录并进入阅读状态，之后才能添加标签、隐私标记和注记。'],
       ['保存编辑', '编辑已有梦境时写回修改，不会改变原来的梦境日期。'],
-      ['系统返回手势', '返回上一个页面；App 内不额外放重复的返回按钮。'],
+      ['系统返回手势', '向右滑动或使用 Android 系统返回手势，回到上一个页面。'],
     ],
   },
   {
@@ -33,7 +33,7 @@ const guidePages = [
       ['注', '打开全文注记、片段注记和 AI 释梦。'],
       ['分享', '生成完整纵向图片并先打开预览，不会立即发送。'],
       ['删除', '确认后把当前梦境移入回收站。'],
-      ['正文翻页', '正文较长时切换阅读页，不会带动整个 App 页面滚动。'],
+      ['正文翻页', '正文较长时左右切换阅读页，继续阅读后面的内容。'],
     ],
   },
   {
@@ -118,9 +118,9 @@ export function Tutorial() {
   return (
     <section className="tutorial detailed-guide" aria-labelledby="guide-title">
       <div className="section-intro">
-        <p className="eyebrow">完整页面说明</p>
+        <p className="eyebrow">使用指南</p>
         <h2 id="guide-title"><span>每个页面，</span><span>每个主要按钮。</span></h2>
-        <p>点击页面名称展开说明。指南只使用文字，不重复功能页图集中的任何图片。</p>
+        <p>选择你想了解的页面，查看每个主要入口和操作的具体作用。</p>
       </div>
       <div className="guide-index" aria-label="指南页面索引">
         {guidePages.map((page) => <a href={`#guide-${page.number}`} key={page.number}>{page.number} {page.title}</a>)}

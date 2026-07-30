@@ -31,6 +31,14 @@ function HomePage({ releaseState }: { releaseState: ReturnType<typeof useLatestR
   return (
     <>
       <Hero releaseState={releaseState} />
+      <a className="discover-banner" href="#/features" aria-label="深入了解梦潮的完整功能">
+        <span className="discover-banner__index">不止是一眼 · 继续探索</span>
+        <span className="discover-banner__title">了解梦潮</span>
+        <span className="discover-banner__copy">
+          看它如何记录、整理并重新连接每一场梦
+          <ArrowRight aria-hidden="true" size={30} />
+        </span>
+      </a>
       <section className="value-strip" aria-label="梦潮的三个特点">
         {values.map((item) => (
           <article className="value-card" key={item.mark}>
@@ -54,7 +62,7 @@ function HomePage({ releaseState }: { releaseState: ReturnType<typeof useLatestR
           <a className="path-card path-card--guide" href="#/guide">
             <span>02 · START HERE</span>
             <h3>现在就开始使用</h3>
-            <p>下载安装，然后写下第一场梦。只保留真正需要操作的步骤。</p>
+            <p>从下载安装开始，跟着指南写下第一场梦，并了解备份与隐私设置。</p>
             <strong>打开使用指南 <ArrowRight aria-hidden="true" size={18} /></strong>
           </a>
         </div>
@@ -95,6 +103,15 @@ function HomePage({ releaseState }: { releaseState: ReturnType<typeof useLatestR
         </div>
       </section>
 
+      <a className="tutorial-gateway" href="#/guide" aria-label="进入梦潮完整使用教程">
+        <span className="tutorial-gateway__eyebrow">看到这里，不妨真正开始</span>
+        <strong>进入完整教程</strong>
+        <span className="tutorial-gateway__action">
+          从下载安装，到写下第一场梦
+          <ArrowRight aria-hidden="true" size={34} />
+        </span>
+      </a>
+
       <DownloadSection releaseState={releaseState} />
     </>
   );
@@ -117,7 +134,7 @@ function FeaturesPage() {
       <header className="subpage-hero">
         <p className="eyebrow">功能 · FEATURES</p>
         <h1><span>从一段刚醒的记忆，</span><span>到一份完整的梦境档案。</span></h1>
-        <p>所有功能按真实使用顺序整理。档案、正文和词云只在这里完整呈现，不再和教程重复。</p>
+        <p>从醒来后的快速记录，到整理、回看与重新理解，看看梦潮如何陪伴一场梦慢慢留下痕迹。</p>
       </header>
       <FeatureStory />
       <nav className="next-page" aria-label="继续浏览">
@@ -134,7 +151,7 @@ function GuidePage({ releaseState }: { releaseState: ReturnType<typeof useLatest
       <header className="subpage-hero subpage-hero--guide">
         <p className="eyebrow">使用指南 · START HERE</p>
         <h1><span>先安装，</span><span>再写下第一场梦。</span></h1>
-        <p>这里只有开始使用真正需要的内容。下载安装直接使用正式按钮，不再用占位图片表达。</p>
+        <p>从下载安装到写下第一场梦，一步步熟悉记录、整理、隐私保护与备份。</p>
       </header>
       <section className="install-card" aria-labelledby="install-title">
         <div><span>STEP 01</span><h2 id="install-title">下载并安装梦潮</h2></div>

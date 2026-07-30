@@ -22,6 +22,12 @@ describe('DownloadPanel', () => {
     expect(
       screen.getByRole('link', { name: /下载 Android 版/ }),
     ).toHaveAttribute('href', 'https://example.com/DreamTide.apk');
+    expect(
+      screen.getByRole('link', { name: /下载 Android 版/ }),
+    ).toHaveAttribute('download', 'DreamTide.apk');
+    expect(screen.getByRole('link', { name: '查看全部版本' })).toHaveClass(
+      'version-link',
+    );
     expect(screen.getByText(/v0.3.0/)).toBeVisible();
     expect(screen.getByText(/12.0 MB/)).toBeVisible();
   });
@@ -46,6 +52,9 @@ describe('DownloadPanel', () => {
     expect(screen.getByRole('link', { name: '查看全部版本' })).toHaveAttribute(
       'href',
       'https://github.com/SpringSpiritSecond/dreamtide-website/releases',
+    );
+    expect(screen.getByRole('link', { name: '查看全部版本' })).not.toHaveClass(
+      'button',
     );
   });
 });

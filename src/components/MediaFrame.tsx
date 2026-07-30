@@ -16,7 +16,7 @@ export function MediaFrame({ src, alt, label, eager = false, portrait = false }:
       {!failed && !isVideo && <img src={url} alt={alt} loading={eager ? 'eager' : 'lazy'}
         fetchPriority={eager ? 'high' : 'auto'} onError={() => setFailed(true)} />}
       {failed && <figcaption className="media-frame__fallback"><FallbackIcon aria-hidden="true" size={24} strokeWidth={1.5} />
-        <strong>{label}</strong><span>媒体素材待补充</span></figcaption>}
+        <strong>{label}</strong><span>暂时无法显示此画面</span></figcaption>}
     </figure>
   );
 }

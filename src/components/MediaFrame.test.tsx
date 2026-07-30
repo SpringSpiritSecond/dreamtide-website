@@ -38,7 +38,7 @@ describe('MediaFrame', () => {
 
     expect(screen.queryByRole('img')).not.toBeInTheDocument();
     expect(screen.getByText('01 · 下载与安装')).toBeVisible();
-    expect(screen.getByText('媒体素材待补充')).toBeVisible();
+    expect(screen.getByText('暂时无法显示此画面')).toBeVisible();
   });
 
   it('renders an eager MP4 as an inline muted loop', () => {

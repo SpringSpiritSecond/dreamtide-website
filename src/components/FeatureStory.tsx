@@ -8,8 +8,8 @@ export function FeatureStory() {
       <section className="feature-story feature-story--text" aria-labelledby="features-title">
         <div className="section-intro">
           <p className="eyebrow">功能地图</p>
-          <h2 id="features-title"><span>先看功能关系，</span><span>需要时再进入详细指南。</span></h2>
-          <p>图片统一放在上方图集；这里用文字解释各项能力，避免相同界面重复出现。</p>
+          <h2 id="features-title"><span>从记录到回看，</span><span>每一步都有迹可循。</span></h2>
+          <p>了解记录、整理、隐私保护与重新发现之间如何彼此连接。</p>
         </div>
         <div className="feature-cards">
           {features.map((feature) => (

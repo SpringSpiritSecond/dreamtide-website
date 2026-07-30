@@ -16,13 +16,15 @@ function openPage(route: string) {
 describe('App', () => {
   beforeEach(() => { window.location.hash = '#/'; });
 
-  it('keeps the home page concise and links to two focused subpages', () => {
+  it('uses real product media and repeats prominent discovery routes', () => {
     render(<App />);
     expect(screen.getByRole('heading', { level: 1, name: '潮落有迹，梦醒留痕。' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '深入了解梦潮的完整功能' })).toHaveAttribute('href', '#/features');
+    expect(screen.getByRole('link', { name: '进入梦潮完整使用教程' })).toHaveAttribute('href', '#/guide');
     expect(screen.getByRole('link', { name: /浏览全部功能/ })).toHaveAttribute('href', '#/features');
     expect(screen.getByRole('link', { name: /打开使用指南/ })).toHaveAttribute('href', '#/guide');
     expect(screen.queryByRole('heading', { name: '写下并保存一场梦' })).not.toBeInTheDocument();
-    expect(document.querySelector('.hero img, .hero video')).not.toBeInTheDocument();
+    expect(document.querySelector('video[aria-label="梦潮首页与刻梦入口演示"]')).toBeInTheDocument();
   });
 
   it('uses one switchable gallery without repeating feature images', () => {
