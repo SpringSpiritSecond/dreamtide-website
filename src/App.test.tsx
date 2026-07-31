@@ -44,6 +44,8 @@ describe('App', () => {
     expect(install?.querySelector('.download-panel')).toBeInTheDocument();
     expect(install?.querySelector('img, video')).not.toBeInTheDocument();
     expect(document.querySelectorAll('.guide-page')).toHaveLength(10);
+    expect(document.querySelector('#guide-01')).toHaveTextContent('梦潮首页');
+    expect(document.querySelector('#guide-10')).toHaveTextContent('个人账号与设置');
     expect(screen.getByRole('heading', { name: '“注”与 AI 释梦' })).toBeInTheDocument();
     expect(document.querySelector('.detailed-guide img, .detailed-guide video')).not.toBeInTheDocument();
   });
