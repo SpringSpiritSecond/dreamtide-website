@@ -4,15 +4,14 @@ import { DownloadPanel } from './components/DownloadPanel';
 import { FeatureStory } from './components/FeatureStory';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
-import { Tutorial } from './components/Tutorial';
 import { useLatestRelease } from './hooks/useLatestRelease';
 
-type Page = 'home' | 'features' | 'guide';
+type Page = 'home' | 'app';
 
 const values = [
-  { mark: '01', title: '醒来就写', text: '用最短的路径留住刚醒时仍然鲜活的画面、人物和情绪。' },
-  { mark: '02', title: '慢慢整理', text: '标签、注记和人物线索，让散落的梦逐渐长成一份私人档案。' },
-  { mark: '03', title: '重新理解', text: '从档案、词云与释梦出发，发现梦境中反复出现的线索。' },
+  { mark: '01', title: '趁梦未散', text: '醒来片刻，把尚有温度的光影、人声与情绪轻轻收下。' },
+  { mark: '02', title: '听见回声', text: '人物、情绪与反复出现的意象，在字里行间慢慢显出彼此的关联。' },
+  { mark: '03', title: '潮汐有迹', text: '当年月与数量铺展开来，那些曾经来过的梦，也有了可循的纹路与轻重。' },
 ];
 
 const faqs = [
@@ -24,18 +23,18 @@ const faqs = [
 
 function pageFromHash(): Page {
   const route = window.location.hash.replace(/^#\/?/, '').split('/')[0];
-  return route === 'features' || route === 'guide' ? route : 'home';
+  return route === 'app' || route === 'features' || route === 'guide' ? 'app' : 'home';
 }
 
 function HomePage({ releaseState }: { releaseState: ReturnType<typeof useLatestRelease> }) {
   return (
     <>
       <Hero releaseState={releaseState} />
-      <a className="discover-banner" href="#/features" aria-label="深入了解梦潮的完整功能">
+      <a className="discover-banner" href="#/app" aria-label="走进梦潮">
         <span className="discover-banner__index">不止是一眼 · 继续探索</span>
-        <span className="discover-banner__title">了解梦潮</span>
+        <span className="discover-banner__title">走进梦潮</span>
         <span className="discover-banner__copy">
-          看它如何记录、整理并重新连接每一场梦
+          看一场梦如何被留下，又在岁月里重新相遇
           <ArrowRight aria-hidden="true" size={30} />
         </span>
       </a>
@@ -49,30 +48,24 @@ function HomePage({ releaseState }: { releaseState: ReturnType<typeof useLatestR
 
       <section className="pathways" aria-labelledby="pathways-title">
         <div className="section-intro">
-          <p className="eyebrow">从这里继续</p>
-          <h2 id="pathways-title"><span>按你现在想做的事，</span><span>选择一条路径</span></h2>
+          <p className="eyebrow">深入梦潮</p>
+          <h2 id="pathways-title"><span>从梦醒的一刻，</span><span>到多年后的再次相遇。</span></h2>
         </div>
-        <div className="pathways__grid">
-          <a className="path-card path-card--features" href="#/features">
-            <span>01 · FEATURES</span>
-            <h3>看看梦潮能做什么</h3>
-            <p>记录、整理、隐私浏览、档案、词云与释梦，集中了解完整功能。</p>
-            <strong>浏览全部功能 <ArrowRight aria-hidden="true" size={18} /></strong>
-          </a>
-          <a className="path-card path-card--guide" href="#/guide">
-            <span>02 · START HERE</span>
-            <h3>现在就开始使用</h3>
-            <p>从下载安装开始，跟着指南写下第一场梦，并了解备份与隐私设置。</p>
-            <strong>打开使用指南 <ArrowRight aria-hidden="true" size={18} /></strong>
+        <div className="pathways__grid pathways__grid--single">
+          <a className="path-card path-card--features" href="#/app">
+            <span>DREAMTIDE · PRODUCT TOUR</span>
+            <h3>看看梦潮如何留住一场梦</h3>
+            <p>收下刚醒时的片段，让人物、情绪与隐秘各得其所；待年月流过，再循着档案与词云，与它不期而遇。</p>
+            <strong>探索梦潮 <ArrowRight aria-hidden="true" size={18} /></strong>
           </a>
         </div>
       </section>
 
       <section className="manifesto" aria-labelledby="manifesto-title">
-        <p className="eyebrow">为什么记录梦</p>
+        <p className="eyebrow">为什么留下梦</p>
         <div>
-          <h2 id="manifesto-title"><span>记录梦的原貌，</span><span>也探索梦的回响。</span></h2>
-          <p>梦潮先帮你留住容易消散的细节，再通过人物、情绪、时间与释梦功能，陪你重新理解梦境中反复出现的线索。</p>
+          <h2 id="manifesto-title"><span>留住梦的原貌，</span><span>也听见它的回响。</span></h2>
+          <p>梦潮先收下容易消散的细节。日后，当人物、情绪与年月再次交叠，梦里反复浮现的意象，也会渐渐有了轮廓。</p>
         </div>
         <span className="manifesto__glyph" aria-hidden="true">梦</span>
       </section>
@@ -80,9 +73,9 @@ function HomePage({ releaseState }: { releaseState: ReturnType<typeof useLatestR
       <section id="privacy" className="privacy-panel" aria-labelledby="privacy-title">
         <div><p className="eyebrow">本地优先</p><h2 id="privacy-title">你的梦，首先属于你。</h2></div>
         <div className="privacy-panel__copy">
-          <p>梦境是很私人的内容。梦潮默认把数据留在你的设备中，不要求账号，也不把记录交给云端。</p>
+          <p>梦境是很私人的内容。梦潮默认把数据留在你的设备中，不要求账号，也不把梦境交给云端。</p>
           <ul>
-            <li><strong>不需要登录</strong><span>打开就能开始记录</span></li>
+            <li><strong>不需要登录</strong><span>打开就能落笔</span></li>
             <li><strong>本地保存</strong><span>内容留在当前设备</span></li>
             <li><strong>可导出备份</strong><span>由你决定文件去向</span></li>
           </ul>
@@ -103,11 +96,11 @@ function HomePage({ releaseState }: { releaseState: ReturnType<typeof useLatestR
         </div>
       </section>
 
-      <a className="tutorial-gateway" href="#/guide" aria-label="进入梦潮完整使用教程">
-        <span className="tutorial-gateway__eyebrow">看到这里，不妨真正开始</span>
-        <strong>进入完整教程</strong>
+      <a className="tutorial-gateway" href="#/app" aria-label="了解梦潮的功能与使用方法">
+        <span className="tutorial-gateway__eyebrow">准备好迎接下一场梦了吗</span>
+        <strong>从这里开始</strong>
         <span className="tutorial-gateway__action">
-          从下载安装，到写下第一场梦
+          趁余温未散落笔，循着年月与意象再次相逢
           <ArrowRight aria-hidden="true" size={34} />
         </span>
       </a>
@@ -128,43 +121,22 @@ function DownloadSection({ releaseState }: { releaseState: ReturnType<typeof use
   );
 }
 
-function FeaturesPage() {
+function AppPage({ releaseState }: { releaseState: ReturnType<typeof useLatestRelease> }) {
   return (
     <div className="subpage">
       <header className="subpage-hero">
-        <p className="eyebrow">功能 · FEATURES</p>
-        <h1><span>从一段刚醒的记忆，</span><span>到一份完整的梦境档案。</span></h1>
-        <p>从醒来后的快速记录，到整理、回看与重新理解，看看梦潮如何陪伴一场梦慢慢留下痕迹。</p>
-      </header>
-      <FeatureStory />
-      <nav className="next-page" aria-label="继续浏览">
-        <span>接下来</span>
-        <a href="#/guide">查看如何开始使用 <ArrowRight aria-hidden="true" /></a>
-      </nav>
-    </div>
-  );
-}
-
-function GuidePage({ releaseState }: { releaseState: ReturnType<typeof useLatestRelease> }) {
-  return (
-    <div className="subpage">
-      <header className="subpage-hero subpage-hero--guide">
-        <p className="eyebrow">使用指南 · START HERE</p>
-        <h1><span>先安装，</span><span>再写下第一场梦。</span></h1>
-        <p>从下载安装到写下第一场梦，一步步熟悉记录、整理、隐私保护与备份。</p>
+        <p className="eyebrow">DREAMTIDE · INTO THE TIDE</p>
+        <h1><span>从梦醒的一刻，</span><span>到再次遇见。</span></h1>
+        <p>梦潮收下刚醒时的记忆，让人物、情绪与隐秘各得其所，也让散落在年月里的意象重新浮现。</p>
       </header>
       <section className="install-card" aria-labelledby="install-title">
-        <div><span>STEP 01</span><h2 id="install-title">下载并安装梦潮</h2></div>
+        <div><span>GET STARTED</span><h2 id="install-title">下载并安装梦潮</h2></div>
         <div>
           <p>下载最新 APK，按照 Android 系统提示完成安装。首次安装时，系统可能要求允许浏览器安装未知来源应用。</p>
           <DownloadPanel state={releaseState} />
         </div>
       </section>
-      <Tutorial />
-      <nav className="next-page" aria-label="继续浏览">
-        <span>还想多了解一点？</span>
-        <a href="#/features">浏览全部功能 <ArrowRight aria-hidden="true" /></a>
-      </nav>
+      <FeatureStory />
     </div>
   );
 }
@@ -185,10 +157,9 @@ export default function App() {
       <Header page={page} />
       <main id="main-content">
         {page === 'home' && <HomePage releaseState={releaseState} />}
-        {page === 'features' && <FeaturesPage />}
-        {page === 'guide' && <GuidePage releaseState={releaseState} />}
+        {page === 'app' && <AppPage releaseState={releaseState} />}
       </main>
-      <footer className="site-footer"><span>梦潮 Dreamtide</span><span>记录 · 整理 · 回看</span></footer>
+      <footer className="site-footer"><span>梦潮 Dreamtide</span><span>入梦 · 留痕 · 重逢</span></footer>
     </>
   );
 }

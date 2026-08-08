@@ -35,7 +35,7 @@ export function ProductGallery() {
       <div className="product-gallery__copy">
         <p className="eyebrow">梦潮一览</p>
         <h2 id="gallery-title"><span>从醒来记录，</span><span>到多年后的再次相遇。</span></h2>
-        <p>浏览梦潮的主要功能画面，看看一场梦如何被记录、整理、保护与重新发现。</p>
+        <p>循着梦潮的主要画面，看看一场梦如何被留下，又在岁月里重新浮现。</p>
         <div className="product-gallery__status" aria-live="polite">
           <span>{String(active + 1).padStart(2, '0')} / {String(slides.length).padStart(2, '0')}</span>
           <h3>{slide.title}</h3>

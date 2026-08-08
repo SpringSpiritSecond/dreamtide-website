@@ -13,35 +13,31 @@ for (const width of [375, 768, 1024, 1440]) {
   });
 }
 
-test('navigation opens focused subpages', async ({ page }) => {
+test('navigation opens the combined App page', async ({ page }) => {
   await page.goto('');
-  await page.getByRole('link', { name: '功能', exact: true }).click();
-  await expect(page.getByRole('heading', { name: /从一段刚醒的记忆.*到一份完整的梦境档案。/ })).toBeVisible();
-  await page.getByRole('link', { name: '使用指南', exact: true }).click();
+  await page.getByRole('link', { name: '走进梦潮', exact: true }).first().click();
+  await expect(page.getByRole('heading', { name: /从梦醒的一刻.*到再次遇见。/ })).toBeVisible();
   await expect(page.getByRole('heading', { name: '下载并安装梦潮' })).toBeVisible();
+  await expect(page.locator('a[href="#/features"], a[href="#/guide"]')).toHaveCount(0);
 });
 
-test('home shows product media and prominent routes at both ends', async ({ page }) => {
-  await page.goto('');
-  await expect(page.locator('video[aria-label="梦潮首页与刻梦入口演示"]')).toBeVisible();
-  await expect(page.getByRole('link', { name: '深入了解梦潮的完整功能' })).toBeVisible();
-  const tutorial = page.getByRole('link', { name: '进入梦潮完整使用教程' });
-  await tutorial.scrollIntoViewIfNeeded();
-  await expect(tutorial).toBeVisible();
-  await tutorial.click();
-  await expect(page.getByRole('heading', { name: '下载并安装梦潮' })).toBeVisible();
+test('each App area keeps its media and guide together', async ({ page }) => {
+  await page.goto('#/app');
+  await expect(page.locator('.app-section')).toHaveCount(6);
+  await expect(page.locator('.app-section__media--single')).toHaveCount(4);
+  await expect(page.locator('.app-section__gallery')).toHaveCount(2);
+
+  const detail = page.locator('#app-section-03');
+  await detail.getByRole('tab', { name: /春梦了无痕/ }).click();
+  await expect(detail.locator('video[aria-label="隐藏与恢复私密片段的演示"]')).toBeVisible();
+
+  await detail.locator('summary').click();
+  await expect(detail.getByRole('heading', { name: '“注”与 AI 释梦' })).toBeVisible();
 });
 
-test('gallery switches to the supplied word cloud video', async ({ page }) => {
-  await page.goto('#/features');
-  await page.getByRole('tab', { name: /词云回看/ }).click();
-  await expect(page.locator('video[aria-label="通过词云回看相关梦境"]')).toBeVisible();
-  await expect(page.locator('.feature-card img, .feature-card video')).toHaveCount(0);
-});
-
-test('install section uses a download control and no media placeholder', async ({ page }) => {
-  await page.goto('#/guide');
-  const install = page.getByRole('heading', { name: '下载并安装梦潮' }).locator('..').locator('..');
-  await expect(install.locator('.download-panel')).toBeVisible();
-  await expect(install.locator('img, video')).toHaveCount(0);
+test('legacy feature and guide hashes resolve to the combined App page', async ({ page }) => {
+  for (const route of ['#/features', '#/guide']) {
+    await page.goto(route);
+    await expect(page.locator('.app-section')).toHaveCount(6);
+  }
 });

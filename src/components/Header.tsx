@@ -1,12 +1,11 @@
 import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
 
-type Page = 'home' | 'features' | 'guide';
+type Page = 'home' | 'app';
 
 const links = [
   { href: '#/', page: 'home' as const, label: '首页' },
-  { href: '#/features', page: 'features' as const, label: '功能' },
-  { href: '#/guide', page: 'guide' as const, label: '使用指南' },
+  { href: '#/app', page: 'app' as const, label: '走进梦潮' },
 ];
 
 export function Header({ page }: { page: Page }) {
@@ -24,7 +23,7 @@ export function Header({ page }: { page: Page }) {
           <a key={link.href} href={link.href} aria-current={page === link.page ? 'page' : undefined}
             onClick={() => setOpen(false)}>{link.label}</a>
         ))}
-        <a className="nav-download" href="#/guide" onClick={() => setOpen(false)}>下载</a>
+        <a className="nav-download" href="#/app" onClick={() => setOpen(false)}>下载</a>
       </nav>
     </header>
   );

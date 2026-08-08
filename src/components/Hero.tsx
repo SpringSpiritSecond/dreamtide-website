@@ -7,16 +7,16 @@ export function Hero({ releaseState }: { releaseState: ReleaseState }) {
   return (
     <section className="hero" aria-labelledby="hero-title">
       <div className="hero__copy">
-        <p className="eyebrow">本地优先的 Android 梦境记录应用</p>
+        <p className="eyebrow">本地优先的 Android 私人梦境手札</p>
         <h1 id="hero-title">
           <span>潮落有迹，</span>
           <em>梦醒留痕。</em>
         </h1>
-        <p className="hero__lead">在梦消散以前，留下它。记录画面与情绪，整理人物和片段，再从日历、档案、词云与释梦中慢慢回看和理解。</p>
+        <p className="hero__lead">在梦消散以前，留下它。收拢尚有温度的画面与情绪，让人物、年月与反复出现的词，在往后的某一天重新发出回声。</p>
         <div className="hero__actions">
           <DownloadPanel state={releaseState} />
-          <a className="button button--discover" href="#/features">
-            了解梦潮 <ArrowRight aria-hidden="true" size={19} />
+          <a className="button button--discover" href="#/app">
+            走进梦潮 <ArrowRight aria-hidden="true" size={19} />
           </a>
         </div>
         <div className="hero__notes" aria-label="产品特点">
@@ -33,7 +33,6 @@ export function Hero({ releaseState }: { releaseState: ReleaseState }) {
           portrait
           eager
         />
-        <p className="hero__caption"><span>01</span> 醒来，从这里刻下第一场梦</p>
       </div>
     </section>
   );
