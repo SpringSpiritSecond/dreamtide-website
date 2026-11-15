@@ -1,7 +1,11 @@
 node_modules/
 dist/
+.pnpm-store/
+.tmp-vitest/
+.review-loop/
 playwright-report/
 test-results/
 *.tsbuildinfo
 vite.config.js
 vite.config.d.ts
+design-review/foam-toggle-20261014/

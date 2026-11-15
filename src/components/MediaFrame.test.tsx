@@ -63,7 +63,7 @@ describe('MediaFrame', () => {
     expect(video).toHaveAttribute('loop');
     expect(video).toHaveAttribute('playsinline');
     expect(video).toHaveAttribute('preload', 'metadata');
-    expect(video).not.toHaveAttribute('controls');
+    expect(video).toHaveAttribute('controls');
     expect(video?.muted).toBe(true);
   });
 

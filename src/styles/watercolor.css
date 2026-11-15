@@ -1,0 +1,92 @@
+/* Home: a live watercolour wash with bubble prints (see src/lib/watercolorTide.ts). */
+html:has(.watercolor-tide) { overflow: hidden; }
+body:has(.watercolor-tide) { --wash-ink: #24343c; --wash-ink-soft: #56666d; }
+body:has(.watercolor-tide) .site-footer { display: none; }
+body:has(.watercolor-tide) .site-header {
+  top: clamp(24px, 3.6vh, 34px); left: clamp(16px, 6vw, 112px); z-index: 30;
+  width: auto; min-height: 0; padding: 0; transform: none;
+  border: 0; border-radius: 0; background: transparent; box-shadow: none; backdrop-filter: none;
+}
+body:has(.watercolor-tide) .site-header .site-nav,
+body:has(.watercolor-tide) .site-header .menu-button { display: none; }
+body:has(.watercolor-tide) .site-header .brand span,
+body:has(.watercolor-tide) .site-header .brand small {
+  color: var(--wash-ink); font-size: 1rem; font-weight: 500; letter-spacing: .04em; text-transform: none;
+}
+
+.watercolor-tide { position: relative; height: 100svh; }
+.wash-stage {
+  position: sticky; top: 0; height: 100svh; overflow: hidden; isolation: isolate;
+  background: #f6f3ee; color: var(--wash-ink); touch-action: none;
+}
+.wash-canvas { position: absolute; inset: 0; z-index: 0; display: block; width: 100%; height: 100%; }
+
+.wash-copy {
+  position: absolute; z-index: 3; left: clamp(16px, 6vw, 112px); top: 50%;
+  width: min(32vw, 440px); transform: translateY(-50%);
+}
+.wash-copy > * { animation: wash-copy-in .8s .38s cubic-bezier(.2, .7, .2, 1) both; }
+@keyframes wash-copy-in { from { opacity: 0; transform: translateY(12px); } }
+.wash-copy__title {
+  margin: 0 0 .62em; font-weight: 600; line-height: 1.16; letter-spacing: .06em;
+  font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", STSong, serif;
+  font-size: clamp(38px, 4.6vw, 66px); color: var(--wash-ink);
+}
+.wash-copy__title span { display: block; }
+.wash-copy p, .wash-copy ul { margin: 0; font-size: clamp(15px, 1.25vw, 18px); line-height: 1.95; color: var(--wash-ink-soft); max-width: 22em; }
+.wash-copy ul { padding-left: 1.1em; }
+.wash-copy ul li::marker { color: var(--wash-tone, #d6688a); }
+.wash-copy__guide {
+  display: inline-flex; align-items: center; gap: .35em; margin-top: 1.4em;
+  color: var(--wash-ink); font-size: 15px; text-decoration: none; border-bottom: 1px solid currentColor;
+}
+
+/* Screenshots sit on the paper as they are: no frame, no crop. */
+.wash-shot {
+  position: absolute; z-index: 2; padding: 0; border: 0; background: none; cursor: zoom-in;
+  border-radius: 3.2% / 1.5%; overflow: hidden;
+  opacity: 0; transform: translateY(10px) scale(.985); visibility: hidden;
+  transition: opacity .7s ease, transform 1s cubic-bezier(.2, .7, .2, 1), visibility 0s .7s;
+}
+.wash-shot.is-wide { border-radius: 1.6% / 2%; }
+.wash-shot img { display: block; width: 100%; height: 100%; }
+.wash-shot.is-on { opacity: 1; transform: none; visibility: visible; transition-delay: .52s, .52s, 0s; }
+.wash-shot.is-open { cursor: zoom-out; }
+.wash-shot:focus-visible { outline: 2px solid var(--wash-ink); outline-offset: 4px; }
+
+/* The hero word and the download link live inside a large paper-white bubble print. */
+.wash-feature {
+  position: absolute; z-index: 2; display: grid; place-content: center; text-align: center;
+  opacity: 0; visibility: hidden; transition: opacity .8s ease, visibility 0s .8s;
+  font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", STSong, serif;
+}
+.wash-feature.is-on { opacity: 1; visibility: visible; transition-delay: .7s, 0s; }
+.wash-feature__word { font-weight: 600; font-size: var(--word, 110px); letter-spacing: .1em; line-height: 1; color: var(--wash-ink); }
+.wash-feature__download {
+  display: grid; gap: 8px; padding: 14px 18px; border-radius: 10px;
+  color: var(--wash-ink); text-decoration: none; font-size: clamp(20px, 1.8vw, 26px); letter-spacing: .1em;
+}
+.wash-feature__download span { font-family: "Noto Sans SC", "PingFang SC", sans-serif; font-size: 14px; letter-spacing: .02em; color: var(--wash-ink-soft); }
+.wash-feature__download:hover { text-decoration: underline; text-underline-offset: 6px; text-decoration-thickness: 1px; }
+.wash-feature__download:focus-visible { outline: 2px solid var(--wash-ink); outline-offset: 2px; }
+
+.wash-dots { position: absolute; z-index: 4; left: 50%; bottom: 30px; transform: translateX(-50%); display: flex; gap: 14px; }
+.wash-dots button {
+  width: 9px; height: 9px; padding: 0; border-radius: 50%; cursor: pointer;
+  border: 1px solid var(--wash-ink-soft); background: transparent;
+  transition: background .6s, border-color .6s, transform .4s;
+}
+.wash-dots button[aria-current="step"] { background: var(--wash-tone, #d6688a); border-color: var(--wash-tone, #d6688a); transform: scale(1.35); }
+.wash-dots button:focus-visible { outline: 2px solid var(--wash-ink); outline-offset: 3px; }
+.wash-hint { position: absolute; z-index: 4; right: clamp(16px, 4.2vw, 60px); bottom: 26px; margin: 0; font-size: 14px; color: var(--wash-ink-soft); }
+
+.wash-stage.is-still .wash-copy > *, .wash-stage.is-still .wash-shot, .wash-stage.is-still .wash-feature { animation: none; transition: none; }
+
+@media (max-width: 760px) {
+  body:has(.watercolor-tide) .site-header { top: 18px; left: 16px; }
+  .wash-copy { top: 60px; transform: none; left: 16px; right: 16px; width: auto; }
+  .wash-copy__title { font-size: 34px; margin-bottom: 10px; }
+  .wash-copy p, .wash-copy ul { font-size: 15px; line-height: 1.7; }
+  .wash-dots { bottom: 18px; }
+  .wash-hint { display: none; }
+}

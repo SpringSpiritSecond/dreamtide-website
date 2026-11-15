@@ -33,7 +33,9 @@ export function DownloadPanel({ state, variant = 'hero' }: {
       </>}
       {state.status === 'unavailable' && <>
         <p className="release-message" role="status">{unavailableCopy[state.reason]}</p>
-        <a className="version-link" href={RELEASES_URL}>查看全部版本 <ArrowUpRight aria-hidden="true" size={13} /></a>
+        <a className="version-link" href={RELEASES_URL}>
+          查看全部版本 <ArrowUpRight aria-hidden="true" size={13} />
+        </a>
       </>}
     </div>
   );

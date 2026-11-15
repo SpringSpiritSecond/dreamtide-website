@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>梦潮｜色雾与散泡</title>
+<style>
+  :root { --ground: #eef1f0; --ink: #1f3b49; --ink-soft: #5a7180; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #e4e8e7; color: var(--ink); font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif; }
+  main { max-width: 1340px; margin: 0 auto; padding: 32px 20px 48px; }
+  h1 { font-family: "Noto Serif SC", "Songti SC", STSong, serif; font-weight: 600; font-size: 28px; margin: 0 0 6px; }
+  .lead { margin: 0 0 28px; color: var(--ink-soft); font-size: 15px; }
+  .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; }
+  figure { margin: 0; }
+  .frame { position: relative; aspect-ratio: 16 / 10; background: var(--ground); overflow: hidden; border-radius: 6px; }
+  .frame canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .copy { position: absolute; left: 6%; top: 50%; transform: translateY(-50%); width: 34%; }
+  .copy h2 { margin: 0 0 10px; font-family: "Noto Serif SC", "Songti SC", STSong, serif; font-weight: 600; font-size: clamp(20px, 2.6vw, 34px); letter-spacing: .04em; }
+  .copy p { margin: 0; font-size: clamp(10px, .95vw, 13px); line-height: 1.8; color: var(--ink-soft); }
+  figcaption { padding: 14px 2px 0; }
+  figcaption b { font-family: "Noto Serif SC", "Songti SC", STSong, serif; font-size: 19px; font-weight: 600; }
+  figcaption b span { color: var(--ink-soft); font-weight: 500; margin-right: 8px; }
+  figcaption p { margin: 6px 0 0; font-size: 14px; line-height: 1.7; color: var(--ink-soft); }
+  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>色雾与散泡</h1>
+  <p class="lead">截图直接浮在色雾里，没有外框；气泡零散地飘在周围，不沿着轮廓排。两张只差气泡的画法。</p>
+  <div class="grid" id="grid"></div>
+</main>
+<script>
+(() => {
+  const options = [
+    { id: 'D1', name: '色雾 + 透明肥皂泡', text: '气泡是透明的，泡膜边缘带一点流转的彩虹色和白色高光（参考 ref-22）。换章时色雾涌动，气泡被潮水带着飘走，新的气泡从雾里浮上来。' },
+    { id: 'D2', name: '色雾 + 水彩泡痕', text: '气泡像颜料在纸上留下的泡痕，泡心透白，颜色积在边缘（参考 ref-23）。换章时泡痕随色雾化开，在新的位置重新晕出来。' },
+  ];
+  const pal = [[78, 158, 149], [98, 168, 198], [152, 186, 126]];
+  const rgba = (c, a) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
+  const mix = (a, b, k) => a.map((v, i) => v + (b[i] - v) * k);
+  const palAt = (u) => { const f = (((u % 1) + 1) % 1) * 3, i = Math.floor(f), k = f - i; return mix(pal[i % 3], pal[(i + 1) % 3], k * k * (3 - 2 * k)); };
+
+  // Scene in 640 x 400 design units.
+  const screen = { x: 430, y: 200, h: 300 };
+  screen.w = screen.h * (1260 / 2676);
+  // Bubbles scattered loosely: a few large, some medium, several small; no rows, no outlines of shapes.
+  const bubbles = [
+    [548, 92, 40, .05], [598, 168, 13, .3], [338, 96, 22, .6], [560, 318, 30, .45], [612, 268, 8, .8],
+    [318, 300, 10, .2], [497, 46, 7, .7], [372, 360, 17, .9], [622, 60, 11, .15], [520, 372, 6, .55],
+    [355, 205, 6, .35], [604, 352, 5, .65],
+  ];
+
+  function mist(ctx) {
+    ctx.save(); ctx.filter = 'blur(30px)';
+    const blobs = [[470, 80, 120, 0], [575, 230, 135, .34], [390, 320, 125, .67], [345, 150, 95, .2], [610, 380, 95, .5], [470, 210, 90, .85]];
+    for (const [x, y, r, u] of blobs) {
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r); const c = palAt(u);
+      g.addColorStop(0, rgba(c, .5)); g.addColorStop(1, rgba(c, 0));
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawScreen(ctx, img) {
+    const { w, h } = screen, x = screen.x - w / 2, y = screen.y - h / 2;
+    // A pale glow under the screen lifts it off the mist without a border.
+    ctx.save(); ctx.filter = 'blur(18px)'; ctx.fillStyle = 'rgba(248,250,249,.85)';
+    ctx.beginPath(); ctx.roundRect(x - 8, y - 6, w + 16, h + 12, 30); ctx.fill(); ctx.restore();
+    const off = document.createElement('canvas'); off.width = w * 3; off.height = h * 3;
+    const o = off.getContext('2d');
+    o.drawImage(img, 0, 0, off.width, off.height);
+    o.globalCompositeOperation = 'destination-in';
+    const gv = o.createLinearGradient(0, 0, 0, off.height); gv.addColorStop(0, 'rgba(0,0,0,0)'); gv.addColorStop(.06, '#000'); gv.addColorStop(.94, '#000'); gv.addColorStop(1, 'rgba(0,0,0,0)');
+    o.fillStyle = gv; o.fillRect(0, 0, off.width, off.height);
+    const gh = o.createLinearGradient(0, 0, off.width, 0); gh.addColorStop(0, 'rgba(0,0,0,0)'); gh.addColorStop(.08, '#000'); gh.addColorStop(.92, '#000'); gh.addColorStop(1, 'rgba(0,0,0,0)');
+    o.fillStyle = gh; o.fillRect(0, 0, off.width, off.height);
+    ctx.drawImage(off, x, y, w, h);
+  }
+
+  function labels(ctx) {
+    // Feature words float in the mist beside the screen, no container.
+    ctx.fillStyle = '#1f3b49'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.font = '500 17px "Noto Serif SC", "Songti SC", STSong, serif';
+    ctx.fillText('标签', 518, 150);
+    ctx.fillText('隐私', 522, 252);
+    ctx.font = '12px "Noto Sans SC", "PingFang SC", sans-serif'; ctx.fillStyle = '#5a7180';
+    ctx.fillText('情绪、人物', 518, 172);
+    ctx.fillText('片段可隐藏', 522, 274);
+  }
+
+  function soapBubble(ctx, x, y, r, u) {
+    const sheen = ctx.createRadialGradient(x, y + r * .25, r * .1, x, y, r);
+    sheen.addColorStop(0, 'rgba(255,255,255,.12)'); sheen.addColorStop(.8, 'rgba(255,255,255,.05)'); sheen.addColorStop(1, rgba(palAt(u), .18));
+    ctx.fillStyle = sheen; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+    const film = ctx.createConicGradient(u * 6, x, y);
+    [[0, [214, 138, 168]], [.33, pal[1]], [.66, [222, 196, 120]], [1, [214, 138, 168]]].forEach(([t, c]) => film.addColorStop(t, rgba(c, 1)));
+    ctx.globalAlpha = .75; ctx.lineWidth = r > 15 ? 1.4 : 1; ctx.strokeStyle = film; ctx.stroke(); ctx.globalAlpha = 1;
+    ctx.lineCap = 'round'; ctx.lineWidth = Math.max(1.2, r * .07); ctx.strokeStyle = 'rgba(255,255,255,.95)';
+    ctx.beginPath(); ctx.arc(x, y, r * .74, Math.PI * 1.12, Math.PI * 1.42); ctx.stroke();
+    if (r > 12) { ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.beginPath(); ctx.arc(x + r * .42, y + r * .38, r * .06, 0, 7); ctx.fill(); }
+  }
+
+  function pigmentBubble(ctx, x, y, r, u) {
+    const c = palAt(u);
+    // Paper-white core, pigment settled at the rim, slightly uneven like a dried bubble print.
+    for (let i = 0; i < 2; i++) {
+      const ox = Math.cos(u * 9 + i * 2.4) * r * .06, oy = Math.sin(u * 9 + i * 2.4) * r * .06, rr = r * (1 - i * .06);
+      const g = ctx.createRadialGradient(x + ox, y + oy, rr * .5, x + ox, y + oy, rr);
+      g.addColorStop(0, 'rgba(250,252,251,.55)'); g.addColorStop(.78, rgba(c, .1)); g.addColorStop(.95, rgba(c, .42)); g.addColorStop(1, rgba(c, 0));
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x + ox, y + oy, rr, 0, 7); ctx.fill();
+    }
+  }
+
+  const grid = document.getElementById('grid');
+  const img = new Image();
+  img.src = '/dreamtide-website/media/编辑-隐.jpg';
+  img.onload = () => document.fonts.ready.then(() => {
+    for (const o of options) {
+      const fig = document.createElement('figure');
+      fig.innerHTML = `<div class="frame"><canvas></canvas><div class="copy"><h2>梦的层次</h2><p>保存之后，补上情绪、标签和梦里的人。<br>也能写注记，把私密的片段藏起来。</p></div></div>
+        <figcaption><b><span>${o.id}</span>${o.name}</b><p>${o.text}</p></figcaption>`;
+      grid.appendChild(fig);
+      const canvas = fig.querySelector('canvas');
+      const dpr = Math.min(2, devicePixelRatio || 1) * 1.5;
+      canvas.width = 640 * dpr; canvas.height = 400 * dpr;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+      mist(ctx);
+      const draw = o.id === 'D1' ? soapBubble : pigmentBubble;
+      // Bubbles behind the screen first, then the screen, then the few that drift in front of it.
+      const front = new Set([0, 3]);
+      bubbles.forEach((b, i) => { if (!front.has(i)) draw(ctx, ...b); });
+      drawScreen(ctx, img);
+      labels(ctx);
+      bubbles.forEach((b, i) => { if (front.has(i)) draw(ctx, ...b); });
+    }
+  });
+})();
+</script>
+</body>
+</html>

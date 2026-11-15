@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>梦潮｜水彩泡印样本</title>
+<style>
+  :root { --ink: #24343c; --ink-soft: #56666d; --tone: #d6688a; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  body {
+    background: #f6f3ee; color: var(--ink);
+    font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; touch-action: none;
+  }
+  #wash { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; }
+  .bar {
+    position: fixed; left: 0; right: 0; top: 0; z-index: 4; pointer-events: none;
+    padding: 28px clamp(16px, 4.2vw, 60px); font-size: 15px; letter-spacing: .04em;
+  }
+  .bar b { font-weight: 500; }
+  .copy {
+    position: fixed; z-index: 3; left: clamp(16px, 6vw, 112px); top: 50%;
+    width: min(32vw, 440px); transform: translateY(-50%); pointer-events: none;
+  }
+  .copy > * { transition: opacity .5s ease, transform .8s cubic-bezier(.2, .7, .2, 1); }
+  .copy.is-out > * { opacity: 0; transform: translateY(12px); }
+  .copy h1, .copy h2 {
+    margin: 0 0 .62em; font-weight: 600; line-height: 1.16; letter-spacing: .06em;
+    font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", STSong, serif;
+    font-size: clamp(38px, 4.6vw, 66px);
+  }
+  .copy p, .copy ul { margin: 0; font-size: clamp(15px, 1.25vw, 18px); line-height: 1.95; color: var(--ink-soft); max-width: 22em; }
+  .copy ul { padding-left: 1.1em; }
+  .copy ul li::marker { color: var(--tone); }
+
+  /* Screenshots sit on the paper as they are: no frame, no crop. */
+  .shot {
+    position: fixed; z-index: 2; border-radius: 3.2% / 1.5%; cursor: zoom-in;
+    opacity: 0; transform: translateY(10px) scale(.985); pointer-events: none;
+    transition: opacity .7s ease, transform 1s cubic-bezier(.2, .7, .2, 1);
+  }
+  .shot.wide { border-radius: 1.6% / 2%; }
+  .shot.is-on { opacity: 1; transform: none; pointer-events: auto; }
+  .shot.is-open { cursor: zoom-out; }
+  .shot:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; }
+
+  /* Hero word and download link live inside a large paper-white bubble print. */
+  .feature {
+    position: fixed; z-index: 2; display: grid; place-content: center; text-align: center; gap: 10px;
+    opacity: 0; transition: opacity .8s ease; pointer-events: none;
+    font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", STSong, serif;
+  }
+  .feature.is-on { opacity: 1; pointer-events: auto; }
+  .feature .word { font-weight: 600; font-size: var(--word, 110px); letter-spacing: .1em; line-height: 1; }
+  .feature a { color: var(--ink); text-decoration: none; font-size: clamp(20px, 1.8vw, 26px); letter-spacing: .1em; display: grid; gap: 8px; padding: 12px; border-radius: 8px; }
+  .feature a span { font-family: "Noto Sans SC", "PingFang SC", sans-serif; font-size: 14px; letter-spacing: .02em; color: var(--ink-soft); }
+  .feature a:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  .dots { position: fixed; z-index: 4; left: 50%; bottom: 30px; transform: translateX(-50%); display: flex; gap: 14px; }
+  .dots button { width: 9px; height: 9px; padding: 0; border-radius: 50%; border: 1px solid var(--ink-soft); background: transparent; cursor: pointer; transition: background .6s, border-color .6s, transform .4s; }
+  .dots button[aria-current="true"] { background: var(--tone); border-color: var(--tone); transform: scale(1.35); }
+  .dots button:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+  .hint { position: fixed; z-index: 4; right: clamp(16px, 4.2vw, 60px); bottom: 26px; font-size: 14px; color: var(--ink-soft); pointer-events: none; }
+
+  @media (max-width: 760px) {
+    .bar { padding: 18px 16px; font-size: 14px; }
+    .copy { top: 60px; transform: none; left: 16px; right: 16px; width: auto; }
+    .copy h1, .copy h2 { font-size: 34px; margin-bottom: 10px; }
+    .copy p, .copy ul { font-size: 15px; line-height: 1.7; }
+    .dots { bottom: 18px; }
+    .hint { display: none; }
+  }
+</style>
+</head>
+<body>
+<canvas id="wash" aria-hidden="true"></canvas>
+<div class="bar"><b>梦潮</b></div>
+<section class="copy" id="copy" aria-live="polite"></section>
+<div id="shots"></div>
+<div class="feature" id="feature"></div>
+<nav class="dots" id="dots" aria-label="章节"></nav>
+<div class="hint" id="hint"></div>
+
+<script>
+(() => {
+  const media = (name) => `/dreamtide-website/media/${name}`;
+  // Each chapter: copy, an optional screenshot, a palette of five pigments and one deep colour that pools.
+  // Neighbouring chapters share a pigment so the colour hands over instead of switching.
+  const states = [
+    { title: '梦醒以后，<br>仍有迹可循', lines: ['梦潮是一款记录与回看梦境的 Android 应用。', '写下、整理、回看，都只存在你的手机里。'],
+      feature: 'word', pal: [[214, 104, 138], [176, 140, 196], [234, 150, 104], [226, 192, 92], [104, 156, 200]], deep: [164, 52, 96] },
+    { title: '刻梦', lines: ['醒来后，趁还记得，把梦写下来。', '可以选日期，先暂存，想好了再保存。'],
+      detail: ['写下梦境正文。', '选择梦发生的日期。', '先暂存草稿，或直接保存为正式记录。'],
+      shot: { src: '刻梦.jpg', w: 1260, h: 2668 }, pal: [[214, 104, 138], [234, 150, 104], [226, 192, 92], [150, 176, 84], [176, 140, 196]], deep: [176, 46, 84] },
+    { title: '梦的层次', lines: ['保存之后，补上情绪、标签和梦里的人。', '也能写注记，把私密的片段藏起来。'],
+      detail: ['为梦补上标签、人物与情绪。', '重读时继续写下注记。', '私密片段由你决定是否显示。'],
+      shot: { src: '编辑-隐.jpg', w: 1260, h: 2676 }, pal: [[58, 150, 150], [92, 136, 210], [136, 182, 104], [150, 130, 200], [214, 132, 150]], deep: [44, 70, 140] },
+    { title: '循迹', lines: ['按日期翻回去看保存过的梦。', '用一个词、一个标签或一个人去找。'],
+      detail: ['按日期与词语查找。', '用标签、人物缩小范围。', '点开一场梦继续阅读。'],
+      shot: { src: '档案.jpg', w: 1260, h: 2648 }, pal: [[92, 128, 200], [150, 128, 204], [58, 156, 170], [200, 150, 190], [226, 196, 120]], deep: [52, 56, 128] },
+    { title: '带走一场梦', lines: ['把一场梦生成长图，先看完整预览。', '满意了再保存到相册，或发给别人。'],
+      detail: ['先生成并预览完整梦境长图。', '可以保存图片到设备。', '也可以打开系统分享面板发送。'],
+      shot: { src: '分享.png', w: 1080, h: 848 }, pal: [[222, 168, 76], [236, 140, 104], [214, 112, 140], [160, 176, 92], [150, 130, 200]], deep: [170, 82, 50] },
+    { title: '下载梦潮', lines: ['目前只有 Android 版，免费使用。', '下载后按手机提示完成安装。'],
+      feature: 'cta', pal: [[58, 150, 150], [214, 112, 140], [92, 136, 210], [226, 192, 92], [136, 182, 104]], deep: [40, 92, 110] },
+  ];
+
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const N = 44, CURSOR = 6;
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const ease = (k) => 1 - Math.pow(1 - clamp(k, 0, 1), 3);
+  const lerp = (a, b, t) => a + (b - a) * t;
+  function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+  // ---------- The painting, rendered live on the GPU ----------
+  const VS = 'attribute vec2 a; void main(){ gl_Position = vec4(a, 0., 1.); }';
+  const FS = `precision highp float;
+    uniform vec2 R; uniform float D, S, t, k;
+    uniform vec2 seedA, seedB;
+    uniform vec3 P[5]; uniform vec3 DP;
+    uniform vec4 copyBox, shot; uniform float shotOn;
+    uniform vec4 PR[${N}]; uniform vec4 PX[${N}];
+    float h(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+    float n(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
+      return mix(mix(h(i), h(i + vec2(1., 0.)), f.x), mix(h(i + vec2(0., 1.)), h(i + vec2(1., 1.)), f.x), f.y); }
+    float fbm(vec2 p){ return n(p) * .5 + n(p * 2.1) * .27 + n(p * 4.3) * .15 + n(p * 8.7) * .08; }
+    float sdBox(vec2 p, vec4 b, float r){
+      vec2 c = b.xy + b.zw * .5, q = abs(p - c) - b.zw * .5 + r;
+      return length(max(q, 0.)) + min(max(q.x, q.y), 0.) - r;
+    }
+    void main(){
+      vec2 p = vec2(gl_FragCoord.x, R.y - gl_FragCoord.y) / D;  // CSS pixels
+      vec2 u = p / S;                                            // design units, 800 = viewport height
+      vec3 paper = vec3(.968, .957, .933);
+      vec3 col = paper + (h(gl_FragCoord.xy) - .5) * .024 + (n(u * .5) - .5) * .016;
+
+      // Where paint lands: two wash shapes cross-fade between chapters, so the stain re-forms rather than slides.
+      float wet = mix(fbm(u * .0036 + seedA), fbm(u * .0036 + seedB), k);
+      float amount = smoothstep(.36, .66, wet);
+      float m = min(min(p.x - copyBox.x, copyBox.z - p.x), min(p.y - copyBox.y, copyBox.w - p.y)) / S;
+      amount *= 1. - smoothstep(-60., 40., m) * .8;
+      float sd = sdBox(p, shot, 20. * S) / S + (fbm(u * .012 + 4.) - .5) * 70.;
+      amount *= mix(1., .25 + .75 * smoothstep(0., 90., sd), shotOn);
+      float tide = exp(-abs(wet - .5) / .018) * .16 * smoothstep(.2, .6, amount + .3);
+
+      // Five pigments flow into each other; the lead colour weighs a little more.
+      vec3 pig = vec3(0.); float ws = 0.;
+      for (int i = 0; i < 5; i++) {
+        float fi = float(i);
+        float w = pow(fbm(u * .0042 + vec2(11. + fi * 17.3, fi * 7.1)), 4.) * (i == 0 ? 1.5 : 1.);
+        pig += P[i] * w; ws += w;
+      }
+      pig /= ws;
+      float pool = smoothstep(.68, .8, fbm(u * .006 + vec2(61., 3.))) * smoothstep(.3, .7, amount);
+      pig = mix(pig, DP, pool * .75);
+
+      float a = amount * .56 + tide + pool * .18;
+      a *= .8 + n(u * .18) * .28 + (h(gl_FragCoord.xy * 1.37) - .5) * .08;
+
+      // Bubble prints: paper cleared inside, pigment dried at the rim. Ghosts are pale, soft-edged circles.
+      for (int i = 0; i < ${N}; i++) {
+        vec4 b = PR[i];
+        if (b.w <= 0.) continue;
+        vec4 x = PX[i];
+        vec2 d = (p - b.xy) / S; float r = b.z / S;
+        if (abs(d.x) > r * 1.6 + 20. || abs(d.y) > r * 1.6 + 20.) continue;
+        float cr = cos(x.y), sn = sin(x.y);
+        vec2 e = vec2((d.x * cr + d.y * sn) / x.x, (-d.x * sn + d.y * cr) * x.x);
+        float ang = atan(e.y, e.x);
+        float edge = r * (1. + (n(vec2(cos(ang), sin(ang)) * 1.8 + x.z) - .5) * .22) + (n(u * .25) - .5) * min(3., r * .12);
+        float dd = length(e) - edge;
+        if (x.w > .5) {
+          a *= 1. - (1. - smoothstep(-r * .35, 4., dd)) * .55 * b.w;
+          a += exp(-abs(dd) / 5.) * .05 * amount * b.w;
+        } else if (dd < 0.) {
+          a *= 1. - smoothstep(0., -3.5, dd) * .93 * b.w;
+        } else {
+          a += exp(-dd / (1.6 + r * .03)) * (.32 + amount * .25) * (.7 + n(u * .4) * .5) * b.w;
+        }
+      }
+      a = min(.82, a);
+      col = mix(col, pig, a);
+      col *= 1. - max(0., a - .45) * .35;
+
+      // Wet paint keeps moving in place: clouds of pigment thicken and thin out, nothing slides.
+      vec2 q = u * .0032;
+      float k1 = .5 + .5 * sin(t * .23), k2 = .5 + .5 * sin(t * .17 + 2.);
+      float c1 = mix(n(q + vec2(3.1, 7.7)) * .65 + n(q * 2.3 + 1.7) * .35, n(q + vec2(9.4, 2.2)) * .65 + n(q * 2.3 + 8.1) * .35, k1);
+      float c2 = mix(n(q * 1.3 + vec2(5.5, 1.1)) * .65 + n(q * 2.9 + 4.4) * .35, n(q * 1.3 + vec2(12.3, 6.6)) * .65 + n(q * 2.9 + 11.) * .35, k2);
+      float wetPaint = smoothstep(.955, .8, dot(col, vec3(.333))) * .85 + .15;
+      vec3 glaze = mix(vec3(1.), mix(P[0], P[1], smoothstep(.3, .7, c2)), .55);
+      col *= mix(vec3(1.), glaze, smoothstep(.48, .78, c1) * .3 * wetPaint);
+      col = mix(col, paper, smoothstep(.5, .2, c1) * .1 * wetPaint);
+      gl_FragColor = vec4(col, 1.);
+    }`;
+
+  const canvas = document.getElementById('wash');
+  const gl = canvas.getContext('webgl', { antialias: false });
+  let U = {};
+  if (gl) {
+    const sh = (type, src) => { const o = gl.createShader(type); gl.shaderSource(o, src); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(o)); return o; };
+    const pr = gl.createProgram();
+    gl.attachShader(pr, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(pr); gl.useProgram(pr);
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(pr, 'a'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    for (const name of ['R', 'D', 'S', 't', 'k', 'seedA', 'seedB', 'P', 'DP', 'copyBox', 'shot', 'shotOn', 'PR', 'PX']) U[name] = gl.getUniformLocation(pr, name);
+  }
+
+  // ---------- Layout ----------
+  let W = innerWidth, H = innerHeight, DPR = 1, mobile = W < 760;
+  function setSize() {
+    W = innerWidth; H = innerHeight; mobile = W < 760;
+    // Cap the pixel count: the painting is soft, it does not need full retina resolution.
+    DPR = Math.min(devicePixelRatio || 1, 1.5, Math.sqrt(2.4e6 / (W * H)));
+    canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
+    if (gl) gl.viewport(0, 0, canvas.width, canvas.height);
+  }
+  function layout(i) {
+    const s = states[i], L = {};
+    L.copy = mobile ? [0, 40, W, 60 + 230] : [0, H / 2 - 190, clamp(W * .06, 16, 112) + Math.min(W * .32, 440) + 30, H / 2 + 190];
+    if (s.shot) {
+      let h = mobile ? H * .5 : Math.min(H * .8, 760), w = h * s.shot.w / s.shot.h;
+      const maxW = mobile ? W - 48 : W * .44;
+      if (w > maxW) { w = maxW; h = w * s.shot.h / s.shot.w; }
+      const cx = mobile ? W / 2 : W * .68, cy = mobile ? H - h / 2 - 58 : H / 2;
+      L.shot = [cx - w / 2, cy - h / 2, w, h];
+    }
+    if (s.feature) {
+      const r = s.feature === 'word' ? (mobile ? Math.min(W * .36, H * .2) : Math.min(H * .3, W * .2)) : (mobile ? Math.min(W * .32, H * .18) : Math.min(H * .22, W * .15));
+      L.feature = [mobile ? W / 2 : W * .66, mobile ? H * .66 : H * .52, r];
+    }
+    return L;
+  }
+
+  // Prints for one chapter: a few large ones with small companions, a couple of mid ones, a few ghosts.
+  function chapterPrints(i, L) {
+    const rnd = mulberry(31 + i * 977), S = H / 800, P = [];
+    const sdShot = (x, y) => {
+      if (!L.shot) return 1e9;
+      const [sx, sy, sw, sh] = L.shot;
+      const qx = Math.abs(x - sx - sw / 2) - sw / 2, qy = Math.abs(y - sy - sh / 2) - sh / 2;
+      return Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0);
+    };
+    const free = (x, y, r, gap = 8) => {
+      if (x - r < 8 || x + r > W - 8 || y - r < 8 || y + r > H - 8) return false;
+      if (y + r > H - 70 && Math.abs(x - W / 2) < 120 + r) return false;      // keep the chapter dots clear
+      if (y - r < 76 && x - r < 150) return false;                              // and the name at top left
+      if (!mobile && y + r > H - 64 && x + r > W - 280) return false;           // and the hint at bottom right
+      const c = L.copy;
+      if (x + r > c[0] - 10 && x - r < c[2] + 10 && y + r > c[1] - 20 && y - r < c[3] + 20) return false;
+      if (sdShot(x, y) < r + 26 * S) return false;
+      if (L.feature && Math.hypot(x - L.feature[0], y - L.feature[1]) < L.feature[2] + r + 20 * S) return false;
+      for (const p of P) if (Math.hypot(p.x - x, p.y - y) < p.r + r + gap * S) return false;
+      return true;
+    };
+    const add = (x, y, r, ghost = false) => P.push({ x, y, r, sx: .82 + rnd() * .36, rot: rnd() * Math.PI, wob: rnd() * 50, ghost });
+    if (L.feature) P.push({ x: L.feature[0], y: L.feature[1], r: L.feature[2], sx: .96, rot: rnd(), wob: rnd() * 50, ghost: false, feature: true });
+    const bigs = mobile ? 2 : 3;
+    for (let n = 0; P.filter((p) => !p.feature).length < bigs && n < 3000; n++) {
+      const r = (34 + rnd() * 34) * S, x = rnd() * W, y = rnd() * H;
+      if (free(x, y, r)) add(x, y, r);
+    }
+    for (const b of P.slice()) {
+      const side = rnd() * Math.PI * 2, want = 2 + Math.floor(rnd() * 2);
+      for (let got = 0, tries = 0; got < want && tries < 200; tries++) {
+        const a = side + (rnd() - .5) * 1.6, r = (5 + Math.pow(rnd(), 1.6) * 13) * S, d = b.r + r + (10 + rnd() * 46) * S;
+        const x = b.x + Math.cos(a) * d, y = b.y + Math.sin(a) * d;
+        if (free(x, y, r)) { add(x, y, r); got++; }
+      }
+    }
+    for (let n = 0, mids = 0; mids < 3 && n < 3000; n++) {
+      const r = (15 + rnd() * 14) * S, x = rnd() * W, y = rnd() * H;
+      if (free(x, y, r)) { add(x, y, r); mids++; }
+    }
+    for (let n = 0, g = 0; g < 3 && n < 3000; n++) {
+      const r = (50 + rnd() * 50) * S, x = rnd() * W, y = rnd() * H;
+      if (L.shot && sdShot(x, y) < 10) continue;
+      const c = L.copy;
+      if (x > c[0] && x < c[2] && y > c[1] && y < c[3]) continue;
+      add(x, y, r, true); g++;
+    }
+    return P.slice(0, 20);
+  }
+
+  // ---------- DOM ----------
+  const copy = document.getElementById('copy'), feature = document.getElementById('feature');
+  const dots = document.getElementById('dots'), hint = document.getElementById('hint'), shotsEl = document.getElementById('shots');
+  const shotEls = states.map((s) => {
+    if (!s.shot) return null;
+    const img = document.createElement('img');
+    img.className = 'shot' + (s.shot.w > s.shot.h ? ' wide' : '');
+    img.src = media(s.shot.src); img.alt = `${s.title}界面截图`; img.tabIndex = -1;
+    img.addEventListener('click', toggleOpen);
+    img.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleOpen(); } });
+    shotsEl.appendChild(img);
+    return img;
+  });
+  function placeDom() {
+    const L = layout(current);
+    shotEls.forEach((el, i) => {
+      if (!el) return;
+      const r = layout(i).shot;
+      Object.assign(el.style, { left: `${r[0]}px`, top: `${r[1]}px`, width: `${r[2]}px`, height: `${r[3]}px` });
+    });
+    if (L.feature) {
+      const [x, y, r] = L.feature;
+      Object.assign(feature.style, { left: `${x - r}px`, top: `${y - r}px`, width: `${r * 2}px`, height: `${r * 2}px` });
+      feature.style.setProperty('--word', `${Math.round(r * .5)}px`);
+    }
+  }
+  function renderCopy(s, detail) {
+    copy.classList.add('is-out');
+    clearTimeout(renderCopy.timer);
+    renderCopy.timer = setTimeout(() => {
+      const tag = current === 0 ? 'h1' : 'h2';
+      const body = detail && s.detail ? `<ul>${s.detail.map((l) => `<li>${l}</li>`).join('')}</ul>` : s.lines.map((l) => `<p>${l}</p>`).join('');
+      copy.innerHTML = `<${tag}>${s.title}</${tag}>${body}`;
+      setTimeout(() => copy.classList.remove('is-out'), 30);
+    }, reduce ? 0 : 380);
+  }
+
+  // ---------- State ----------
+  let current = -1, open = false, locked = false;
+  let prints = [];                          // { x, y, r, sx, rot, wob, ghost, born, dying, a, cursor }
+  const live = { pal: states[0].pal.map((c) => c.slice()), deep: states[0].deep.slice(), copy: [0, 0, 0, 0], shot: [0, 0, 0, 0], shotOn: 0 };
+  let seedA = [0, 0], seedB = [0, 0], washK = 1, washFrom = 0;
+  const seedFor = (i) => [i * 13.7 + 2.3, i * 5.9 + 1.7];
+
+  function go(index, instant = false) {
+    index = clamp(index, 0, states.length - 1);
+    if (index === current) return;
+    const prev = current;
+    current = index; open = false;
+    const s = states[current], L = layout(current), now = performance.now();
+    // Old prints soak into the paper; new ones bloom one after another once the old colour starts to give way.
+    for (const p of prints) if (!p.cursor && !p.dying) p.dying = now;
+    const fresh = chapterPrints(current, L);
+    fresh.forEach((p, i) => { p.born = instant || reduce ? 0 : now + 380 + (p.feature ? 0 : 160 + i * 70); });
+    prints.push(...fresh);
+    // The wash re-forms: the new stain fades in over the old one.
+    seedA = washK < .5 ? seedA : seedB; seedB = seedFor(current); washK = instant || reduce || prev < 0 ? 1 : 0; washFrom = now;
+    if (prev < 0) seedA = seedB;
+    renderCopy(s, false);
+    shotEls.forEach((el, i) => {
+      if (!el) return;
+      el.classList.remove('is-open');
+      const on = i === current;
+      el.tabIndex = on ? 0 : -1;
+      if (on) setTimeout(() => el.classList.add('is-on'), instant || reduce ? 0 : 520); else el.classList.remove('is-on');
+    });
+    feature.classList.remove('is-on');
+    setTimeout(() => {
+      if (current !== index) return;
+      feature.innerHTML = s.feature === 'word' ? '<span class="word">梦潮</span>'
+        : s.feature === 'cta' ? '<a href="../#/download">下载 Android 版<span>免费 · Android</span></a>' : '';
+      placeDom();
+      if (s.feature) feature.classList.add('is-on');
+    }, instant || reduce ? 0 : 700);
+    placeDom();
+    [...dots.children].forEach((d, i) => d.setAttribute('aria-current', String(i === current)));
+    document.documentElement.style.setProperty('--tone', `rgb(${s.pal[0].join(',')})`);
+    hint.textContent = current === 0 ? '向下滚动' : s.detail ? '点开截图看操作说明' : '';
+  }
+  function toggleOpen() {
+    const s = states[current];
+    if (!s.detail) return;
+    open = !open;
+    shotEls[current].classList.toggle('is-open', open);
+    renderCopy(s, open);
+  }
+
+  // ---------- Input ----------
+  const turn = (dir) => {
+    if (locked) return;
+    const next = clamp(current + dir, 0, states.length - 1);
+    if (next === current) return;
+    locked = true; go(next);
+    setTimeout(() => { locked = false; }, reduce ? 300 : 1300);
+  };
+  addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const d = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+    if (Math.abs(d) > 6) turn(Math.sign(d));
+  }, { passive: false });
+  addEventListener('keydown', (e) => {
+    if (e.target.closest && e.target.closest('a, button, .shot') && (e.key === ' ' || e.key === 'Enter')) return;
+    if (['ArrowDown', 'ArrowRight', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); turn(1); }
+    if (['ArrowUp', 'ArrowLeft', 'PageUp'].includes(e.key)) { e.preventDefault(); turn(-1); }
+    if (e.key === 'Escape' && open) toggleOpen();
+  });
+  let touch = null;
+  addEventListener('pointerdown', (e) => { touch = { x: e.clientX, y: e.clientY }; });
+  addEventListener('pointerup', (e) => {
+    if (!touch) return;
+    const dx = e.clientX - touch.x, dy = e.clientY - touch.y;
+    touch = null;
+    if (e.pointerType !== 'mouse' && Math.max(Math.abs(dx), Math.abs(dy)) > 46) turn(Math.abs(dy) > Math.abs(dx) ? -Math.sign(dy) : -Math.sign(dx));
+  });
+  // The cursor drops a bubble now and then; it lands on the wet paint and leaves a print that soaks away.
+  const mouse = { x: null, y: null, travel: 0 };
+  addEventListener('pointermove', (e) => {
+    if (e.pointerType !== 'mouse') return;
+    const x = e.clientX, y = e.clientY;
+    if (mouse.x !== null) mouse.travel += Math.hypot(x - mouse.x, y - mouse.y);
+    mouse.x = x; mouse.y = y;
+    if (reduce || mouse.travel < 110 + Math.random() * 80) return;
+    if (prints.filter((p) => p.cursor).length >= CURSOR) return;
+    mouse.travel = 0;
+    const S = H / 800, r = (Math.random() < .3 ? 46 + Math.random() * 22 : 16 + Math.random() * 20) * S;
+    prints.push({ x: x + (Math.random() - .5) * 70 * S, y: y + (Math.random() - .5) * 70 * S, r, sx: .85 + Math.random() * .3,
+      rot: Math.random() * 3, wob: Math.random() * 50, ghost: false, cursor: true, born: performance.now(), life: 3500 + Math.random() * 2000,
+      vx: (Math.random() - .5) * 6, vy: (Math.random() - .5) * 4 });
+  });
+
+  states.forEach((s, i) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.setAttribute('aria-label', s.title.replace(/<br>/g, ''));
+    b.addEventListener('click', () => go(i));
+    dots.appendChild(b);
+  });
+  let resizeTimer = 0;
+  addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      setSize();
+      prints = chapterPrints(current, layout(current)).map((p) => ({ ...p, born: 0 }));
+      placeDom();
+    }, 150);
+  });
+
+  // ---------- Frame ----------
+  const PRbuf = new Float32Array(N * 4), PXbuf = new Float32Array(N * 4), Pbuf = new Float32Array(15);
+  const t0 = performance.now();
+  let last = t0;
+  function frame(now) {
+    const dt = Math.min(.05, (now - last) / 1000), f = dt * 60;
+    last = now;
+    const s = states[current], L = layout(current);
+    // Colours, the clear areas and the stain shape all ease toward the chapter; nothing jumps.
+    const kc = reduce ? 1 : 1 - Math.pow(.975, f), kb = reduce ? 1 : 1 - Math.pow(.93, f);
+    live.pal.forEach((c, i) => c.forEach((v, j) => { c[j] = lerp(v, s.pal[i][j], kc); }));
+    live.deep.forEach((v, j) => { live.deep[j] = lerp(v, s.deep[j], kc); });
+    const tc = L.copy, ts = L.shot ? [L.shot[0], L.shot[1], L.shot[2], L.shot[3]] : live.shot;
+    for (let j = 0; j < 4; j++) { live.copy[j] = lerp(live.copy[j], tc[j], kb); live.shot[j] = lerp(live.shot[j], ts[j], kb); }
+    live.shotOn = lerp(live.shotOn, L.shot ? 1 : 0, kb);
+    if (washK < 1) washK = reduce ? 1 : clamp((now - washFrom) / 2200, 0, 1);
+
+    // Advance the prints.
+    prints = prints.filter((p) => {
+      if (p.cursor) {
+        const age = (now - p.born) / 1000, k = age * 1000 / p.life;
+        p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= Math.pow(.97, f); p.vy *= Math.pow(.97, f);
+        p.draw = p.r * ease(age / .6) * (1 + k * .12);
+        p.a = k < .55 ? 1 : 1 - ease((k - .55) / .45);
+        return p.a > 0;
+      }
+      if (p.dying) {
+        const k = (now - p.dying) / (reduce ? 1 : 1100);
+        p.a = 1 - ease(k); p.draw = p.r * (1 + ease(k) * .14);
+        return k < 1;
+      }
+      const g = now < p.born ? 0 : ease((now - p.born) / 700);
+      p.a = g > 0 ? 1 : 0; p.draw = p.r * g;
+      return true;
+    });
+    // Keep the most important prints if a fast scroll asks for more slots than the shader has.
+    const list = prints.length > N ? prints.filter((p) => !p.dying).concat(prints.filter((p) => p.dying)).slice(0, N) : prints;
+    PRbuf.fill(0); PXbuf.fill(0);
+    list.forEach((p, i) => {
+      PRbuf.set([p.x, p.y, p.draw || 0, p.a || 0], i * 4);
+      PXbuf.set([p.sx, p.rot, p.wob, p.ghost ? 1 : 0], i * 4);
+    });
+
+    if (gl) {
+      live.pal.forEach((c, i) => Pbuf.set(c.map((v) => v / 255), i * 3));
+      gl.uniform2f(U.R, canvas.width, canvas.height); gl.uniform1f(U.D, DPR); gl.uniform1f(U.S, H / 800);
+      gl.uniform1f(U.t, reduce ? 0 : (now - t0) / 1000); gl.uniform1f(U.k, ease(washK));
+      gl.uniform2f(U.seedA, seedA[0], seedA[1]); gl.uniform2f(U.seedB, seedB[0], seedB[1]);
+      gl.uniform3fv(U.P, Pbuf); gl.uniform3f(U.DP, live.deep[0] / 255, live.deep[1] / 255, live.deep[2] / 255);
+      gl.uniform4f(U.copyBox, live.copy[0], live.copy[1], live.copy[2], live.copy[3]);
+      gl.uniform4f(U.shot, live.shot[0], live.shot[1], live.shot[2], live.shot[3]); gl.uniform1f(U.shotOn, live.shotOn);
+      gl.uniform4fv(U.PR, PRbuf); gl.uniform4fv(U.PX, PXbuf);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  setSize();
+  {
+    const L = layout(0);
+    live.copy = L.copy.slice();
+  }
+  go(0, true);
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

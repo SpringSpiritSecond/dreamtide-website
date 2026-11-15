@@ -1,18 +1,18 @@
 :root {
-  font-family: Inter, "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif;
   color: #17383b;
   background: #eef2ed;
   font-synthesis: none;
-  --paper: #f7f7f1;
+  --paper: #f7f6f0;
   --mist: #dfe9e4;
   --cyan: #bcdad6;
   --blue: #315f73;
-  --ink: #17383b;
-  --muted: #587074;
+  --ink: #193a3d;
+  --muted: #52686b;
   --coral: #d86655;
   --amber: #d79a45;
   --plum: #765d7f;
-  --line: rgba(49, 95, 115, .17);
+  --line: rgba(34, 75, 76, .2);
   --serif: "Noto Serif SC", "Source Han Serif SC", STSong, SimSun, serif;
   --shadow: 0 32px 80px rgba(26, 65, 66, .15);
 }
@@ -26,11 +26,9 @@ body::before {
   z-index: -2;
   content: "";
   background:
-    radial-gradient(circle at 8% 6%, rgba(188, 218, 214, .75), transparent 26%),
-    radial-gradient(circle at 92% 22%, rgba(216, 102, 85, .22), transparent 24%),
-    radial-gradient(circle at 12% 68%, rgba(118, 93, 127, .13), transparent 24%),
-    radial-gradient(circle at 86% 82%, rgba(215, 154, 69, .15), transparent 20%),
-    linear-gradient(180deg, #edf3ef, #faf4ed 44%, #e9efeb);
+    radial-gradient(circle at 85% 9%, rgba(188, 218, 214, .44), transparent 30%),
+    radial-gradient(circle at 10% 61%, rgba(216, 102, 85, .1), transparent 30%),
+    linear-gradient(180deg, #f5f6f0, #f8f5ef 56%, #eef2ed);
 }
 
 a { color: inherit; }
@@ -38,14 +36,15 @@ button, a { -webkit-tap-highlight-color: transparent; }
 button:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px solid rgba(216, 120, 105, .45); outline-offset: 4px; }
 h1, h2, h3, p { margin-top: 0; }
 h1, h2, h3 { font-family: var(--serif); font-weight: 500; line-break: strict; }
-h1, h2 { word-break: keep-all; }
+h1, h2 { overflow-wrap: anywhere; text-wrap: balance; }
 h3 { text-wrap: pretty; }
 h1 > span, h1 > em, h2 > span { display: block; }
 main { overflow: clip; }
 
 .skip-link { position: fixed; z-index: 100; left: 1rem; top: 1rem; transform: translateY(-180%); padding: .75rem 1rem; background: var(--ink); color: white; }
 .skip-link:focus { transform: none; }
-.site-header { position: fixed; z-index: 50; top: 14px; left: 50%; transform: translateX(-50%); width: min(1180px, calc(100% - 28px)); min-height: 62px; display: flex; align-items: center; justify-content: space-between; padding: .5rem .55rem .5rem 1.25rem; border: 1px solid rgba(255, 255, 255, .7); border-radius: 999px; background: rgba(247, 247, 241, .84); box-shadow: 0 12px 38px rgba(35, 66, 67, .08); backdrop-filter: blur(20px); }
+#main-content:focus { outline: none; }
+.site-header { position: fixed; z-index: 50; top: 14px; left: 50%; transform: translateX(-50%); width: min(1180px, calc(100% - 28px)); min-height: 62px; display: flex; align-items: center; justify-content: space-between; padding: .5rem .55rem .5rem 1.25rem; border: 1px solid rgba(255, 255, 255, .8); border-radius: 999px; background: rgba(247, 246, 240, .92); box-shadow: 0 10px 30px rgba(35, 66, 67, .08); backdrop-filter: blur(20px); }
 .brand { display: flex; align-items: baseline; gap: .6rem; text-decoration: none; }
 .brand span { font-family: var(--serif); font-size: 1.2rem; letter-spacing: .14em; }
 .brand small { color: var(--muted); font-size: .63rem; letter-spacing: .14em; text-transform: uppercase; }
@@ -71,7 +70,7 @@ main { overflow: clip; }
 .loading-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--coral); animation: pulse 1.2s infinite; }
 
 .media-frame { position: relative; width: 100%; aspect-ratio: 4 / 3; margin: 0; overflow: hidden; border: 1px solid rgba(49, 95, 115, .17); border-radius: 30px; background: linear-gradient(145deg, rgba(255, 255, 255, .62), rgba(201, 225, 223, .36)); box-shadow: var(--shadow); }
-.media-frame--portrait { width: min(100%, 350px); aspect-ratio: 1 / 2; border-radius: 46px; }
+.media-frame--portrait { width: min(100%, 350px); aspect-ratio: 1 / 2; border-radius: 38px; }
 .media-frame img, .media-frame video { display: block; width: 100%; height: 100%; object-fit: cover; }
 .media-frame__fallback { height: 100%; display: grid; place-content: center; justify-items: center; gap: .65rem; padding: 2rem; color: var(--blue); text-align: center; }
 .media-frame__fallback strong { font-family: var(--serif); }

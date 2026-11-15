@@ -1,0 +1,1069 @@
+<!doctype html>
+<!-- Hallmark · pre-emit critique: P4 H4 E3 S4 R3 V3 -->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>梦潮｜互动泡室章节样本</title>
+<style>
+  *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#e9eeeb;color:#184c60;font-family:"Microsoft YaHei",sans-serif}body{overflow:hidden}
+  main{position:relative;width:100vw;height:100svh;min-height:550px;isolation:isolate;background:radial-gradient(circle at 10% 34%,#f7d7e2 0,transparent 46%),radial-gradient(circle at 95% 40%,#cdeee9 0,transparent 60%),#eeeae9}
+  canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair}
+  #foam-gl{display:none}
+  .top{position:absolute;z-index:2;top:4.5%;left:4.6%;right:4.6%;display:flex;justify-content:space-between;pointer-events:none;font-size:14px;letter-spacing:.06em;color:#327489}
+  .copy{position:absolute;z-index:2;left:5%;top:34%;width:28%;pointer-events:none}.copy small{font-size:12px;letter-spacing:.25em}.copy h1{font-family:Georgia,"Songti SC",serif;font-weight:400;font-size:clamp(42px,5vw,78px);margin:18px 0 16px;letter-spacing:-.07em}.copy p{font-family:Georgia,"Songti SC",serif;font-size:clamp(16px,1.55vw,23px);line-height:1.8;margin:0;color:#426c75}.copy p+p{color:#ab6481}
+  .tip{position:absolute;z-index:2;bottom:8%;left:5%;font-size:13px;color:#4b7982;pointer-events:none}
+  .switcher{position:absolute;z-index:4;bottom:4%;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:12px;padding:7px 10px;border-radius:999px;background:#173d4bea;box-shadow:0 12px 35px #2b4d5040;color:#fff;font-size:12px;white-space:nowrap}.switcher button{border:0;border-radius:50%;width:31px;height:31px;background:#ffffff20;color:#fff;cursor:pointer;font-size:20px}.switcher button:hover{background:#ffffff40}.switcher span{min-width:110px;text-align:center}
+  .overlay{position:absolute;z-index:5;inset:0;display:none;place-items:center;background:#e9efeced;padding:7vh 5vw}.overlay.is-open{display:grid}.overlay img{height:min(75vh,760px);max-width:80vw;object-fit:contain;box-shadow:0 20px 55px #21465738}.overlay button{position:absolute;right:5%;top:5%;border:0;border-radius:50%;height:42px;width:42px;background:#214e5d;color:#fff;font-size:24px;cursor:pointer}
+  @media(max-width:760px){
+    .copy{top:12%;left:7%;width:78%}.copy small{display:none}.copy h1{font-size:46px;margin:10px 0}
+    .copy p{position:fixed;left:7%;width:86%;bottom:15%;font-size:15px;line-height:1.8}
+    .copy p+p{bottom:10%}.top{left:7%;right:7%}
+    .tip{display:none}
+    .switcher{left:7%;bottom:3%;transform:none;gap:13px;padding:0;background:transparent;box-shadow:none;color:#2d7180}
+    .switcher button{width:12px;height:12px;border:1px solid #5f929d;background:transparent;font-size:0}
+    .switcher button:hover{background:#b9dadd}
+    .switcher span{min-width:12px;width:12px;height:12px;border-radius:50%;background:#2d8193;font-size:0}
+  }
+  @media(max-width:760px) and (max-height:700px){.tip{display:none}}
+</style>
+</head>
+<body>
+<main>
+  <canvas id="foam-gl" tabindex="0" aria-label="可拖动气泡，点击界面气泡查看截图"></canvas>
+  <canvas id="foam" tabindex="0" aria-label="可拖动气泡，点击界面气泡查看截图"></canvas>
+  <div class="top"><span>梦潮 DreamTide</span><span>02 / 04</span></div>
+  <div class="copy"><small>CHAPTER TWO</small><h1>梦的层次</h1><p>保存后，补上情绪、标签和人物。</p><p>也能写注记、标记私密内容。</p></div>
+  <div class="tip">移动或拖动泡室，观察共用膜壁如何变形</div>
+  <div class="switcher"><button id="prev" aria-label="上一种形态">‹</button><span id="variantLabel"></span><button id="next" aria-label="下一种形态">›</button></div>
+  <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-label="梦潮 App 截图"><button id="close" aria-label="关闭截图">×</button><img id="fullImage" alt="梦潮 App 的梦境记录界面"></div>
+</main>
+<script>
+// Throwaway single-chapter study: A packs a vertical chain, B grows a broad reef,
+// and C keeps large quiet chambers. All membranes are calculated from moving sites.
+const canvas=document.querySelector('#foam'),ctx=canvas.getContext('2d');
+const glCanvas=document.querySelector('#foam-gl');let gl=null;
+const labels=['A · 密集连体','B · 横向泡礁','C · 大小对比'];
+const params=new URLSearchParams(location.search);let variant=Math.max(0,'ABC'.indexOf(params.get('variant')||'B'));
+const image=new Image();image.src=new URL('../media/编辑-隐.jpg',location.href).href;
+const tagsImage=new Image();tagsImage.src=new URL('../media/chapter-art/record-tags.webp',location.href).href;
+const privateImage=new Image();privateImage.src=new URL('../media/chapter-art/record-private.webp',location.href).href;
+const mainScreen=document.createElement('canvas');
+let mainScreenReady=false;
+function composeMainScreen(){
+  if(mainScreenReady||!image.complete||!image.naturalWidth)return;
+  const w=image.naturalWidth,h=image.naturalHeight;
+  mainScreen.width=w;mainScreen.height=h;
+  const paint=mainScreen.getContext('2d');
+  paint.drawImage(image,0,0);
+  mainScreenReady=true;
+}
+const screenImages=[mainScreen,tagsImage,privateImage];
+document.querySelector('#fullImage').src=image.src;
+const pointer={x:-1000,y:-1000,down:false,previousX:-1000,previousY:-1000};let sites=[],width=0,height=0,dpr=1,last=0;
+const rand=(n)=>{let x=Math.sin(n*157.47+23.31)*43758.5453;return x-Math.floor(x)};
+const mix=(a,b,t)=>a+(b-a)*t;
+let microParticles=null;
+function initMicroParticles(){
+  if(!gl||variant!==1){microParticles=null;return}
+  const pitch=params.get('material')==='fine'?(width<=760?13.5:18):10.5,margin=8,origin=-margin;
+  const cols=Math.ceil(width/pitch)+margin*2+4;
+  const rows=Math.ceil(height/pitch)+margin*2+4;
+  const count=cols*rows,data=new Float32Array(count*4);
+  const hx=new Float32Array(count),hy=new Float32Array(count);
+  const vx=new Float32Array(count),vy=new Float32Array(count);
+  for(let row=0;row<rows;row++)for(let col=0;col<cols;col++){
+    const index=row*cols+col,cellX=origin+col,cellY=origin+row,at=index*4;
+    const x=cellX+hash2(cellX,cellY)*.98+.01;
+    const y=cellY+hash2(cellX+27.3,cellY+8.7)*.98+.01;
+    hx[index]=data[at]=x;hy[index]=data[at+1]=y;
+    data[at+2]=hash2(cellX+45.2,cellY+17.6);
+    data[at+3]=1;
+  }
+  microParticles={pitch,origin,cols,rows,data,hx,hy,vx,vy};
+}
+function updateMicroParticles(dt,t){
+  const grid=microParticles;if(!grid)return;
+  const {pitch,cols,rows,data,hx,hy,vx,vy}=grid;
+  const phase=t*.00072;
+  const lifeTime=t*.001;
+  const active=pointer.x>=0&&pointer.y>=0&&pointer.x<width&&pointer.y<height;
+  const dragX=active&&pointer.previousX>=0?Math.max(-28,Math.min(28,pointer.x-pointer.previousX)):0;
+  const dragY=active&&pointer.previousY>=0?Math.max(-28,Math.min(28,pointer.y-pointer.previousY)):0;
+  const reach=pointer.down?110:55;
+  for(let row=1;row<rows-1;row++)for(let col=1;col<cols-1;col++){
+    const index=row*cols+col,at=index*4;
+    let x=data[at],y=data[at+1];
+    const drift=phase+data[at+2]*6.283;
+    const driftRadius=data[at+2]>.935?.24:.07;
+    let targetX=hx[index]+Math.sin(drift+row*.11)*driftRadius;
+    let targetY=hy[index]+Math.cos(drift*.87+col*.13)*driftRadius;
+    if(active){
+      const dx=hx[index]*pitch-pointer.x,dy=hy[index]*pitch-pointer.y;
+      const distance=Math.hypot(dx,dy)||1;
+      if(distance<reach){
+        const pressure=(1-distance/reach)**2;
+        const strength=pointer.down?1.65:.58;
+        targetX+=dx/distance*strength*pressure+dragX/pitch*pressure*.46;
+        targetY+=dy/distance*strength*pressure+dragY/pitch*pressure*.46;
+      }
+    }
+    let pressureX=0,pressureY=0;
+    for(let n=0;n<4;n++){
+      const neighbor=n===0?index-1:n===1?index+1:n===2?index-cols:index+cols;
+      const nx=x-data[neighbor*4],ny=y-data[neighbor*4+1];
+      const distance=Math.hypot(nx,ny)||.001;
+      const rest=Math.hypot(hx[index]-hx[neighbor],hy[index]-hy[neighbor]);
+      const overlap=Math.max(0,rest*.82-distance);
+      pressureX+=nx/distance*overlap;pressureY+=ny/distance*overlap;
+    }
+    vx[index]=(vx[index]+((targetX-x)*.14+pressureX*.06)*dt)*Math.pow(.78,dt);
+    vy[index]=(vy[index]+((targetY-y)*.14+pressureY*.06)*dt)*Math.pow(.78,dt);
+    x=Math.max(hx[index]-1.15,Math.min(hx[index]+1.15,x+vx[index]*dt));
+    y=Math.max(hy[index]-1.15,Math.min(hy[index]+1.15,y+vy[index]*dt));
+    data[at]=x;data[at+1]=y;
+    if(data[at+2]>.76){
+      const cycle=5+data[at+2]*4;
+      const life=(lifeTime+data[at+2]*cycle*4.7)%cycle;
+      const fadeOut=Math.max(0,Math.min(1,(cycle-1.9-life)/.7));
+      const fadeIn=Math.max(0,Math.min(1,(life-(cycle-1.0))/.7));
+      data[at+3]=life<cycle-2.6?1:life<cycle-1.0?fadeOut:fadeIn;
+    }
+  }
+  pointer.previousX=pointer.x;pointer.previousY=pointer.y;
+}
+function reset(){
+  const desktop=innerWidth>760;
+  const region=desktop?{x:.47,y:.13,w:.48,h:.76}:{x:.03,y:.255,w:.94,h:.36};
+  const count=[70,65,43][variant];sites=[];
+  const cores=variant===0?[[.12,.75,.18],[.28,.49,.21],[.56,.27,.2],[.76,.67,.2],[.43,.79,.16]]:
+    variant===1?(desktop?
+      [[.12,.57,.17],[.35,.36,.22],[.62,.57,.22],[.83,.37,.18],[.54,.82,.16]]:
+      [[.04,.62,.16],[.29,.55,.24],[.70,.825,.21],[.724,.12,.18],[.53,.80,.15]]):
+      [[.16,.62,.19],[.43,.35,.29],[.77,.58,.25],[.5,.83,.15]];
+  for(let i=0;i<count;i++){
+    let x,y,r;
+    if(i<cores.length){[x,y,r]=cores[i];r*=region.w*width*(i===1?1.13:.84)}
+    else {const c=cores[Math.floor(rand(i+18)*cores.length)],angle=rand(i+77)*Math.PI*2,spread=.16+rand(i+103)*.75;
+      x=c[0]+Math.cos(angle)*spread*c[2]*2.25;y=c[1]+Math.sin(angle)*spread*c[2]*2.05;
+      r=(variant===2?10:11)+(rand(i+45)**2)*(variant===2?22:20);r*=Math.max(.58,width/1400)}
+    const homeX=(region.x+x*region.w)*width,homeY=(region.y+y*region.h)*height;
+    sites.push({x:homeX,y:homeY,hx:homeX,hy:homeY,vx:0,vy:0,r,seed:i});
+  }
+  document.querySelector('#variantLabel').textContent=labels[variant];
+  params.set('variant','ABC'[variant]);history.replaceState(null,'',location.pathname+'?'+params+'#prototype');
+  initMicroParticles();
+}
+function resize(){width=innerWidth;height=innerHeight;dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
+  if(gl){const scale=Math.min(devicePixelRatio||1,1.25);glCanvas.width=Math.round(width*scale);glCanvas.height=Math.round(height*scale);gl.viewport(0,0,glCanvas.width,glCanvas.height)}
+  reset()}
+function update(dt,t){for(const s of sites){const breathing=Math.sin(t*.00035+s.seed*2.2)*2.5;
+  let tx=s.hx+Math.sin(t*.00019+s.seed*1.9)*5,ty=s.hy+breathing;
+  const dx=s.x-pointer.x,dy=s.y-pointer.y,d=Math.hypot(dx,dy)||1;
+  if(d<135){const force=(1-d/135)*(pointer.down?78:35);tx+=dx/d*force;ty+=dy/d*force}
+  s.vx+=(tx-s.x)*.025*dt;s.vy+=(ty-s.y)*.025*dt;s.vx*=Math.pow(.84,dt);s.vy*=Math.pow(.84,dt);s.x+=s.vx*dt;s.y+=s.vy*dt}}
+const field=document.createElement('canvas'),fieldCtx=field.getContext('2d');
+let fieldWidth=0,fieldHeight=0,fieldVariant=-1,fieldPixels=null,lastFrame=0;
+let sumField=null,coreSumField=null,firstField=null;
+let nearestField=null,runnerField=null,warpXField=null,warpYField=null;
+let baseColors=null,grainField=null,textureField=null,stainField=null;
+let microRimField=null,microPoreField=null,largePoreField=null;
+const pigments=[
+  {x:.51,y:.33,r:228,g:105,b:131}, // rose
+  {x:.79,y:.23,r:236,g:153,b:104}, // apricot
+  {x:.73,y:.65,r:224,g:190,b:94},  // warm yellow
+  {x:.56,y:.77,r:48,g:147,b:151},  // sea glass
+  {x:.91,y:.76,r:42,g:97,b:150}    // ocean blue
+];
+const mobilePigments=[
+  {x:.24,y:.41,r:239,g:134,b:158},
+  {x:.76,y:.37,r:240,g:135,b:120},
+  {x:.61,y:.54,r:243,g:207,b:106},
+  {x:.12,y:.86,r:166,g:212,b:204},
+  {x:.97,y:.86,r:155,g:194,b:210}
+];
+function ensureField(){const nextWidth=width>760?280:220;
+  const nextHeight=Math.round(nextWidth*height/width);
+  if(nextWidth===fieldWidth&&nextHeight===fieldHeight&&fieldVariant===variant)return;
+  fieldWidth=nextWidth;fieldHeight=nextHeight;fieldVariant=variant;
+  field.width=fieldWidth;field.height=fieldHeight;
+  fieldPixels=fieldCtx.createImageData(fieldWidth,fieldHeight);
+  const length=fieldWidth*fieldHeight;
+  sumField=new Float32Array(length);coreSumField=new Float32Array(length);
+  firstField=new Float32Array(length);
+  nearestField=new Float32Array(length);runnerField=new Float32Array(length);
+  warpXField=new Float32Array(length);warpYField=new Float32Array(length);
+  baseColors=new Float32Array(length*3);grainField=new Float32Array(length);
+  textureField=new Float32Array(length);stainField=new Float32Array(length);
+  microRimField=new Float32Array(length);microPoreField=new Float32Array(length);
+  largePoreField=new Float32Array(length);
+  for(let row=0;row<fieldHeight;row++)for(let col=0;col<fieldWidth;col++){
+    const index=row*fieldWidth+col,nx=(col+.5)/fieldWidth,ny=(row+.5)/fieldHeight;
+    const x=(col+.5)*width/fieldWidth,y=(row+.5)*height/fieldHeight;
+    let red=0,g=0,blue=0,total=0;
+    for(const pigment of (width>760?pigments:mobilePigments)){const dx=(nx-pigment.x)*1.2,dy=(ny-pigment.y)*1.35;
+      const falloff=1/(.012+dx*dx+dy*dy),weight=falloff*falloff;total+=weight;
+      red+=pigment.r*weight;g+=pigment.g*weight;blue+=pigment.b*weight}
+    baseColors[index*3]=red/total;baseColors[index*3+1]=g/total;
+    baseColors[index*3+2]=blue/total;
+    grainField[index]=(Math.sin(col*127.1+row*311.7)*43758.5453)%1;
+    warpXField[index]=Math.sin(y*.035+Math.sin(x*.014)*2)*9+
+      Math.sin(x*.023+y*.037)*4;
+    warpYField[index]=Math.sin(x*.028+Math.sin(y*.021)*2)*8+
+      Math.cos(y*.02-x*.034)*4;
+    const wave=Math.sin(x*.045+Math.sin(y*.028)*2.8)+
+      Math.sin(y*.062-x*.02)*.6;
+    const caustic=Math.sin(x*.092+Math.sin(y*.035)*4.3)*
+      Math.sin(y*.068+Math.sin(x*.027)*3.6);
+    textureField[index]=wave*5+saturate((caustic-.43)*2.1)*20.9;
+    stainField[index]=valueNoise(x*.018,y*.018)*.65+
+      valueNoise(x*.065,y*.065)*.35;
+    const microScale=variant===1&&width<=760?7.5:10;
+    const microX=(x+warpXField[index]*.18+valueNoise(x*.031,y*.031)*15)/microScale;
+    const microY=(y+warpYField[index]*.18+valueNoise(x*.031+13.7,y*.031+4.2)*15)/microScale;
+    const cellX=Math.floor(microX),cellY=Math.floor(microY);
+    const localX=microX-cellX,localY=microY-cellY;
+    let nearest=10,runner=10,seed=0;
+    for(let oy=-1;oy<=1;oy++)for(let ox=-1;ox<=1;ox++){
+      const nx=cellX+ox,ny=cellY+oy;
+      const dx=ox+hash2(nx,ny)*.98+.01-localX;
+      const dy=oy+hash2(nx+27.3,ny+8.7)*.98+.01-localY;
+      const distance=Math.hypot(dx,dy);
+      if(distance<nearest){runner=nearest;nearest=distance;seed=hash2(nx+45.2,ny+17.6)}
+      else if(distance<runner)runner=distance;
+    }
+    const radius=.25+Math.pow(seed,2.1)*.34;
+    microPoreField[index]=(1-smoothstep(radius-.045,radius+.035,nearest))*(.42+seed*.11);
+    microRimField[index]=1-smoothstep(.015,.085,Math.abs(nearest-radius));
+    const largeX=(x+warpXField[index]*.27)/25,largeY=(y+warpYField[index]*.27)/25;
+    const largeCellX=Math.floor(largeX),largeCellY=Math.floor(largeY);
+    const largeLocalX=largeX-largeCellX,largeLocalY=largeY-largeCellY;
+    let largePore=0;
+    for(let oy=-1;oy<=1;oy++)for(let ox=-1;ox<=1;ox++){
+      const cx=largeCellX+ox,cy=largeCellY+oy;
+      if(hash2(cx+61.3,cy+28.9)<.68)continue;
+      const centerX=ox+hash2(cx+19.7,cy+4.1)*.78+.11;
+      const centerY=oy+hash2(cx+3.4,cy+73.2)*.78+.11;
+      const largeRadius=.14+Math.pow(hash2(cx+7.1,cy+92.4),2)*.32;
+      const distance=Math.hypot(largeLocalX-centerX,largeLocalY-centerY);
+      largePore=Math.max(largePore,1-smoothstep(largeRadius-.06,largeRadius+.015,distance));
+    }
+    largePoreField[index]=largePore;
+  }}
+function saturate(value){return Math.max(0,Math.min(1,value))}
+function smoothstep(a,b,value){const t=saturate((value-a)/(b-a));return t*t*(3-2*t)}
+function hash2(x,y){const value=Math.sin(x*127.1+y*311.7)*43758.5453;return value-Math.floor(value)}
+function valueNoise(x,y){const ix=Math.floor(x),iy=Math.floor(y);
+  let fx=x-ix,fy=y-iy;fx=fx*fx*(3-2*fx);fy=fy*fy*(3-2*fy);
+  const top=mix(hash2(ix,iy),hash2(ix+1,iy),fx);
+  const bottom=mix(hash2(ix,iy+1),hash2(ix+1,iy+1),fx);
+  return mix(top,bottom,fy)}
+function buildFoamSites(){
+  const coreCount=variant===2?4:5;
+  const foamSites=sites.flatMap((s,i)=>{
+    if(i>=coreCount){const ratio=Math.min(...sites.slice(0,coreCount).map(core=>
+      Math.hypot(s.x-core.x,s.y-core.y)/core.r));
+      if(ratio<.72||ratio>1.28)return []}
+    let life=1;
+    if(i>=coreCount&&rand(s.seed+73)>.73){
+      const cycle=7+rand(s.seed+19)*6;
+      const age=(performance.now()*.001+rand(s.seed+31)*cycle)%cycle;
+      life=smoothstep(0,.8,age)*(1-smoothstep(cycle-1.1,cycle-.2,age));
+    }
+    return [{x:s.x,y:s.y,reach:s.r*(i<coreCount?1.78:3.45)*(i<coreCount?1:Math.max(.08,life)),
+      weight:(i<coreCount?1:1.42)*life}]
+  });
+  // Small chambers occupy the moving joins between large chambers.
+  for(let a=0;a<coreCount;a++)for(let b=a+1;b<coreCount;b++){
+    const one=sites[a],two=sites[b],dx=two.x-one.x,dy=two.y-one.y;
+    const distance=Math.hypot(dx,dy);
+    if(distance<105||distance>315)continue;
+    const count=Math.min(6,Math.max(3,Math.round(Math.min(one.r,two.r)/20)));
+    const ratio=one.r/(one.r+two.r),midX=one.x+dx*ratio,midY=one.y+dy*ratio;
+    const span=Math.min(one.r,two.r)*1.65;
+    for(let k=0;k<count;k++){
+      const seed=a*41+b*17+k*7;
+      const position=(k+1)/(count+1)+(rand(seed+47)-.5)*.7/count;
+      const along=(position-.5)*span;
+      const offset=(rand(seed)-.5)*30;
+      foamSites.push({x:midX-dy/distance*along+dx/distance*offset,
+        y:midY+dx/distance*along+dy/distance*offset,
+        reach:16+rand(seed+21)**2*25,weight:1.45});
+    }
+  }
+  if(variant===1&&width<=760){
+    const upper=sites[3],lower=sites[2];
+    foamSites.push({x:Math.max(upper.x,lower.x)+38,
+      y:mix(upper.y,lower.y,.5),reach:52,weight:1.24});
+  }
+  return foamSites;
+}
+function draw(t){
+  if(t-lastFrame<70)return;
+  const dt=Math.min(2,(t-lastFrame)/16.7||1);lastFrame=t;
+  update(dt,t);
+  if(variant===1&&params.get('material')==='macro'){
+    drawMacroFallback();return}
+  ensureField();
+  const pixels=fieldPixels.data;
+  const stepX=width/fieldWidth,stepY=height/fieldHeight;
+  const foamSites=buildFoamSites();
+  const mobileStretch=width<=760?.82:1;
+  sumField.fill(0);coreSumField.fill(0);firstField.fill(0);
+  nearestField.fill(1e6);runnerField.fill(1e6);
+  for(let i=0;i<foamSites.length;i++){
+    const s=foamSites[i],reach=s.reach,invReach=1/(reach*reach);
+    const left=Math.max(0,Math.floor((s.x-reach-12)/stepX));
+    const right=Math.min(fieldWidth-1,Math.ceil((s.x+reach+12)/stepX));
+    const top=Math.max(0,Math.floor((s.y-(reach+12)/mobileStretch)/stepY));
+    const bottom=Math.min(fieldHeight-1,Math.ceil((s.y+(reach+12)/mobileStretch)/stepY));
+    for(let row=top;row<=bottom;row++){
+      const dy=((row+.5)*stepY-s.y)*mobileStretch;
+      for(let col=left;col<=right;col++){
+        const dx=(col+.5)*stepX-s.x,index=row*fieldWidth+col;
+        const bentX=dx+warpXField[index]*.45,bentY=dy+warpYField[index]*.45;
+        const squared=(bentX*bentX+bentY*bentY)*invReach;
+        if(squared>=1)continue;
+        const influence=(1-squared)**2*s.weight;
+        sumField[index]+=influence;
+        if(i<(variant===2?4:5))coreSumField[index]+=influence;
+        const score=Math.sqrt((dx+warpXField[index])**2+(dy+warpYField[index])**2)-reach*.22;
+        if(score<nearestField[index]){
+          runnerField[index]=nearestField[index];nearestField[index]=score;
+        }else if(score<runnerField[index])runnerField[index]=score;
+        if(influence>firstField[index])firstField[index]=influence;
+      }
+    }
+  }
+  for(let row=0;row<fieldHeight;row++){
+    const y=(row+.5)*stepY;
+    for(let col=0;col<fieldWidth;col++){
+      const x=(col+.5)*stepX;
+      const index=row*fieldWidth+col,at=index*4;
+      const sum=sumField[index],first=firstField[index];
+      const body=saturate((sum-.12)/.24)*saturate((coreSumField[index]-.025)/.13);
+      if(body<.01){pixels[at+3]=0;continue}
+      const boundary=runnerField[index]<1e5?
+        saturate(1-(runnerField[index]-nearestField[index])/8):0;
+      const outer=saturate(1-Math.abs(sum-.22)/.11)*(runnerField[index]>1e5?1:.28);
+      const grain=grainField[index];
+      const pore=Math.abs(grain)>.82?.48:1;
+      const foam=saturate(Math.max(boundary*.62,outer)*(.54+Math.abs(grain)*.22)*pore);
+      const glow=saturate(first)*18+textureField[index];
+      const depth=saturate((runnerField[index]-nearestField[index])/58);
+      const shade=1-depth*.06,printGrain=(Math.abs(grain)-.5)*10;
+      const stain=(stainField[index]-.5)*23;
+      let red=(baseColors[index*3]+glow*.7+printGrain+stain*1.1)*shade;
+      let g=(baseColors[index*3+1]+glow*.6+printGrain+stain*.8)*shade;
+      let blue=(baseColors[index*3+2]+glow*.48+printGrain+stain*.55)*shade;
+      const largePore=largePoreField[index];
+      const microPore=microPoreField[index]*(1-largePore);
+      const microRim=microRimField[index]*(1-largePore);
+      red+=(255-red)*microPore;g+=(252-g)*microPore;blue+=(246-blue)*microPore;
+      red+=(255-red)*largePore*.76;g+=(253-g)*largePore*.76;blue+=(247-blue)*largePore*.76;
+      red*=1-microRim*.10;g*=1-microRim*.14;blue*=1-microRim*.16;
+      const fleck=foam*(.25+Math.abs(grain)*.06);
+      red+=(255-red)*fleck;g+=(252-g)*fleck;blue+=(246-blue)*fleck;
+      pixels[at]=red;pixels[at+1]=g;pixels[at+2]=blue;
+      pixels[at+3]=Math.round(body*(250-largePore*145-microPore*87));
+    }
+  }
+  fieldCtx.putImageData(fieldPixels,0,0);
+  ctx.clearRect(0,0,width,height);
+  ctx.imageSmoothingEnabled=true;
+  ctx.drawImage(field,0,0,width,height);
+  composeMainScreen();
+  for(const [siteIndex,source,xScale,yScale] of
+    [[1,mainScreen,width<=760?.60:.68,width<=760?1.13:1.02],[3,tagsImage,width<=760?.95:.70,width<=760?.65:.57],[2,privateImage,width<=760?.82:.67,width<=760?.417:.57]]){
+    if(source===mainScreen?!mainScreenReady:!source.complete||!source.naturalWidth)continue;
+    const site=sites[siteIndex],rx=site.r*xScale,ry=site.r*yScale*(width<=760?1.2:1);
+    ctx.save();ctx.globalCompositeOperation='source-atop';
+    ctx.beginPath();ctx.ellipse(site.x,site.y,rx*.96,ry*.96,0,0,Math.PI*2);ctx.clip();
+    ctx.globalAlpha=.96;ctx.drawImage(source,site.x-rx,site.y-ry,rx*2,ry*2);
+    const film=ctx.createRadialGradient(site.x-rx*.28,site.y-ry*.32,rx*.08,
+      site.x,site.y,Math.max(rx,ry));
+    film.addColorStop(0,'rgba(255,255,255,.02)');
+    film.addColorStop(.68,'rgba(245,222,207,.05)');
+    film.addColorStop(1,'rgba(198,150,157,.35)');
+    ctx.globalAlpha=.68;ctx.fillStyle=film;
+    ctx.fillRect(site.x-rx,site.y-ry,rx*2,ry*2);
+    ctx.restore();
+    ctx.save();ctx.globalCompositeOperation='source-atop';
+    ctx.beginPath();ctx.ellipse(site.x,site.y,rx*.96,ry*.96,0,0,Math.PI*2);
+    ctx.strokeStyle='rgba(139,211,204,.45)';ctx.lineWidth=2;ctx.stroke();ctx.restore();
+  }
+  if(params.has('forceCanvas')&&params.has('capture')&&!canvas.dataset.capture&&
+    mainScreenReady&&tagsImage.complete&&tagsImage.naturalWidth&&
+    privateImage.complete&&privateImage.naturalWidth){
+    const preview=document.createElement('canvas');preview.width=canvas.width;preview.height=canvas.height;
+    const paint=preview.getContext('2d');paint.fillStyle='#eeeae9';
+    paint.fillRect(0,0,preview.width,preview.height);paint.drawImage(canvas,0,0);
+    canvas.dataset.capture=preview.toDataURL('image/png');
+  }
+}
+function drawMacroFallback(){
+  ctx.clearRect(0,0,width,height);
+  const mobile=width<=760,foamSites=buildFoamSites();
+  const palette=['#e19aaf','#efb49b','#edc994','#e5aea7','#f1ceaa'];
+  for(let i=5;i<foamSites.length;i++){
+    const s=foamSites[i],rx=s.reach/3.45*1.22,ry=s.reach/3.45*1.34;
+    ctx.beginPath();ctx.ellipse(s.x,s.y,rx,ry,0,0,Math.PI*2);
+    ctx.fillStyle='rgba(247,216,198,.42)';ctx.fill();
+    ctx.strokeStyle='rgba(255,251,243,.85)';ctx.lineWidth=1.2;ctx.stroke();
+  }
+  for(let a=0;a<5;a++)for(let b=a+1;b<5;b++){
+    const one=sites[a],two=sites[b],distance=Math.hypot(one.x-two.x,one.y-two.y);
+    if(distance>210)continue;
+    for(let k=0;k<12;k++){
+      const u=(k+1)/13,jitter=(rand(a*131+b*29+k*7)-.5)*22;
+      const x=mix(one.x,two.x,u)+jitter,y=mix(one.y,two.y,u)-jitter*.5;
+      const radius=2+rand(a*23+b*41+k*17)*5;
+      ctx.beginPath();ctx.arc(x,y,radius,0,Math.PI*2);
+      ctx.strokeStyle='rgba(244,211,184,.62)';ctx.lineWidth=1;ctx.stroke();
+    }
+  }
+  composeMainScreen();
+  for(const i of [0,4,1,2,3]){
+    const s=sites[i],factor=i===1?[mobile?.53:.68,mobile?1.13:1.02]:i===2?[.67,.57]:i===3?[.70,.57]:[.88,mobile?1.04:.92];
+    const rx=s.r*factor[0],ry=s.r*factor[1]*(mobile&&(i===1||i===2||i===3)?1.2:1);
+    const source=i===1?mainScreen:i===2?privateImage:i===3?tagsImage:null;
+    ctx.save();ctx.beginPath();ctx.ellipse(s.x,s.y,rx,ry,0,0,Math.PI*2);ctx.clip();
+    const gradient=ctx.createRadialGradient(s.x-rx*.35,s.y-ry*.4,2,s.x,s.y,Math.max(rx,ry)*1.4);
+    gradient.addColorStop(0,'rgba(255,255,255,.82)');
+    gradient.addColorStop(1,palette[i]);
+    ctx.globalAlpha=.8;ctx.fillStyle=gradient;ctx.fillRect(s.x-rx,s.y-ry,rx*2,ry*2);
+    if(source&&(i===1?mainScreenReady:source.complete&&source.naturalWidth)){
+      ctx.globalAlpha=.95;ctx.drawImage(source,s.x-rx,s.y-ry,rx*2,ry*2);
+    }
+    ctx.restore();
+    ctx.beginPath();ctx.ellipse(s.x,s.y,rx,ry,0,0,Math.PI*2);
+    ctx.strokeStyle='rgba(242,169,152,.53)';ctx.lineWidth=3;ctx.stroke();
+    ctx.strokeStyle='rgba(255,255,255,.78)';ctx.lineWidth=1.4;ctx.stroke();
+  }
+}
+const fragmentSource=`#version 300 es
+precision highp float;
+#define MAX_SITES 128
+uniform vec2 u_resolution;
+uniform float u_scale;
+uniform int u_count;
+uniform int u_coreCount;
+uniform vec4 u_sites[MAX_SITES];
+uniform sampler2D u_image;
+uniform sampler2D u_tagsImage;
+uniform sampler2D u_privateImage;
+uniform bool u_hasImage;
+uniform bool u_hasTagsImage;
+uniform bool u_hasPrivateImage;
+uniform bool u_mobile;
+uniform bool u_macro;
+uniform float u_time;
+uniform bool u_singleLayer;
+uniform sampler2D u_microParticles;
+uniform ivec2 u_microOrigin;
+uniform vec4 u_screenRects[3];
+out vec4 outColor;
+float sat(float v){return clamp(v,0.0,1.0);}
+float hash2(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+float valueNoise(vec2 p){vec2 cell=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);
+  return mix(mix(hash2(cell),hash2(cell+vec2(1,0)),f.x),
+    mix(hash2(cell+vec2(0,1)),hash2(cell+vec2(1,1)),f.x),f.y);}
+void main(){
+  vec2 p=vec2(gl_FragCoord.x,u_resolution.y-gl_FragCoord.y)/u_scale;
+  if(u_macro){
+    float coreD=10.0,screenD=10.0,smallD=10.0,bridgeFirst=0.0,bridgeSecond=0.0;
+    float foamSum=0.0,foamCoreSum=0.0;
+    int coreIndex=-1,screenOwner=-1,smallIndex=-1;
+    vec2 coreLocal=vec2(0.0),screenLocal=vec2(0.0),smallLocal=vec2(0.0);
+    for(int i=0;i<MAX_SITES;i++){
+      if(i>=u_count)break;
+      vec4 site=u_sites[i];
+      vec2 fieldDelta=p-site.xy;
+      if(u_mobile)fieldDelta.y*=.82;
+      float fieldDistance=dot(fieldDelta,fieldDelta)/(site.z*site.z);
+      if(fieldDistance<1.0){
+        float influence=pow(1.0-fieldDistance,2.0)*site.w;
+        foamSum+=influence;
+        if(i<u_coreCount)foamCoreSum+=influence;
+      }
+      vec2 radius=i<u_coreCount?vec2(site.z/1.78):vec2(site.z/3.45);
+      if(i==1)radius*=vec2(u_mobile?.60:.68,u_mobile?1.356:1.02);
+      else if(i==3)radius*=vec2(u_mobile?.95:.70,u_mobile?.78:.57);
+      else if(i==2)radius*=vec2(u_mobile?.82:.67,u_mobile?.50:.57);
+      else if(i<u_coreCount)radius*=vec2(1.13,u_mobile?1.25:1.12);
+      else radius*=vec2(1.22,1.34);
+      vec2 local=(p-site.xy)/max(radius,vec2(1.0));
+      float angle=atan(local.y,local.x);
+      float boundaryWarp=(i==2||i==3)?
+        .070*sin(angle*5.0+float(i)*1.7)+.031*sin(angle*9.0+float(i)*.8):
+        .037*sin(angle*5.0+float(i)*1.7)+.018*sin(angle*9.0+float(i)*.8);
+      float d=length(local)*(1.0+boundaryWarp);
+      if(i<u_coreCount){
+        float proximity=exp(-1.5*d*d);
+        if(proximity>bridgeFirst){bridgeSecond=bridgeFirst;bridgeFirst=proximity;}
+        else if(proximity>bridgeSecond)bridgeSecond=proximity;
+        if(d<coreD){coreD=d;coreIndex=i;coreLocal=local;}
+        if((i==1||i==2||i==3)&&d<screenD){screenD=d;screenOwner=i;screenLocal=local;}
+      }
+    }
+    bool mainBubble=coreD<.995&&(coreIndex==1||coreIndex==2||coreIndex==3);
+    bool pictureBubble=screenD<.995;
+    float d=pictureBubble?screenD:(mainBubble?coreD:smallD);
+    int owner=pictureBubble?screenOwner:(mainBubble?coreIndex:smallIndex);
+    vec2 local=pictureBubble?screenLocal:(mainBubble?coreLocal:smallLocal);
+    float body=1.0-smoothstep(.965,1.035,d);
+    float foamBody=sat((foamSum-.34)/.25)*sat((foamCoreSum-.055)/.14);
+    float mobileDelta=u_resolution.y/u_scale-680.0;
+    float foamTop=132.0+mobileDelta*.255;
+    float foamBottom=482.0+mobileDelta*.615;
+    float envelope=u_mobile?smoothstep(foamTop,foamTop+24.0,p.y)*
+      (1.0-smoothstep(foamBottom-30.0,foamBottom,p.y)):1.0;
+    foamBody*=envelope;
+    float foamEdge=sat((foamSum-.16)/.14)*
+      (1.0-sat((foamSum-.38)/.16))*sat((foamCoreSum-.018)/.09);
+    vec2 sprayP=p/7.0,sprayCell=floor(sprayP),sprayLocal=fract(sprayP);
+    float spraySeed=hash2(sprayCell+vec2(4.7,8.1));
+    vec2 sprayCenter=vec2(hash2(sprayCell+vec2(17.3,5.1)),
+      hash2(sprayCell+vec2(2.4,19.7)))*.64+.18;
+    float sprayRadius=mix(.16,.35,spraySeed);
+    float sprayD=length(sprayLocal-sprayCenter);
+    float sprayRing=smoothstep(sprayRadius-.10,sprayRadius-.035,sprayD)-
+      smoothstep(sprayRadius+.025,sprayRadius+.10,sprayD);
+    float foamSpray=foamEdge*step(.72,spraySeed)*sprayRing*envelope;
+    if(!mainBubble&&smallD>.995&&(foamBody>.005||foamSpray>.005)){
+      vec2 warped=p+vec2(
+        sin(p.y*.037+sin(p.x*.018)*2.0)*1.8,
+        cos(p.x*.043+sin(p.y*.019)*2.0)*1.8);
+      vec2 foamP=warped/10.5+vec2(valueNoise(p*.018),valueNoise(p*.018+vec2(17.4,6.2)))*.08;
+      vec2 foamCell=floor(foamP);
+      float nearPore=10.0,secondPore=10.0,seed=0.0;
+      vec2 cellDelta=vec2(0.0);
+      for(int fy=-2;fy<=2;fy++)for(int fx=-2;fx<=2;fx++){
+        ivec2 cell=ivec2(foamCell)+ivec2(fx,fy)-u_microOrigin;
+        if(any(lessThan(cell,ivec2(0)))||any(greaterThanEqual(cell,textureSize(u_microParticles,0))))continue;
+        vec4 particle=texelFetch(u_microParticles,cell,0);
+        if(particle.a<.02)continue;
+        float cellSeed=particle.z;
+        float size=mix(.62,1.46,pow(cellSeed,1.35))+
+          smoothstep(.935,.995,cellSeed)*.58;
+        size*=1.0+(cellSeed>.935?.34:(cellSeed>.87?.24:.12))*
+          sin(u_time*(.65+cellSeed*.8)+cellSeed*31.4);
+        vec2 poreDelta=particle.xy-foamP;
+        float candidate=length(poreDelta)/size;
+        if(cellSeed>.985){
+          float split=smoothstep(.36,.88,
+            sin(u_time*.86+cellSeed*41.0));
+          vec2 axis=vec2(cos(cellSeed*79.0),sin(cellSeed*79.0));
+          vec2 spread=axis*split*1.05;
+          candidate=min(length(poreDelta-spread),
+            length(poreDelta+spread))/(size*(1.0-.24*split));
+        }
+        candidate+=(1.0-particle.a)*.55;
+        if(candidate<nearPore){secondPore=nearPore;nearPore=candidate;
+          seed=cellSeed;cellDelta=foamP-particle.xy;}
+        else if(candidate<secondPore)secondPore=candidate;
+      }
+      float filmGap=secondPore-nearPore;
+      float edgeNoise=valueNoise(p*.17+vec2(6.3,2.1))-.5;
+      float poreSurface=nearPore+edgeNoise*.065;
+      float bubble=1.0-smoothstep(.42,.62,poreSurface);
+      float bubbleRim=smoothstep(.47,.58,poreSurface)*
+        (1.0-smoothstep(.66,.76,poreSurface));
+      float bubbleLight=sat(dot(normalize(cellDelta+vec2(.0001)),vec2(-.52,-.85))*.65+.35);
+      vec3 bubbleNormal=normalize(vec3(cellDelta*.95,
+        sqrt(max(.03,1.0-pow(sat(poreSurface/.72),2.0)))));
+      float cellLight=sat(dot(bubbleNormal,normalize(vec3(-.48,-.62,.84))));
+      float cellGlint=pow(cellLight,20.0);
+      float wallVariation=valueNoise(p*.039+vec2(4.3,11.7));
+      float wallRough=edgeNoise*.065+(valueNoise(p*.44)-.5)*.021;
+      float membrane=1.0-smoothstep(.006,.045+wallVariation*.075,
+        filmGap+wallRough);
+      vec2 dyeP=p+vec2(sin(p.y*.036+sin(p.x*.011))*17.0,
+        cos(p.x*.029+sin(p.y*.014))*13.0);
+      float stain=valueNoise(dyeP*.019)*.52+
+        valueNoise(dyeP*.077)*.31+valueNoise(dyeP*.23)*.17;
+      float horizontal=sat((p.x-(u_mobile?35.0:560.0))/(u_mobile?350.0:670.0)+
+        (valueNoise(p*.011+vec2(3.7,9.1))-.5)*.48);
+      float vertical=sat((p.y-(u_mobile?220.0:240.0))/(u_mobile?200.0:240.0)+
+        (valueNoise(p*.013+vec2(14.2,2.1))-.5)*.50);
+      vec3 pigment=mix(vec3(204,75,124),vec3(236,138,84),horizontal);
+      pigment=mix(pigment,vec3(233,205,75),vertical*.83);
+      float cool=sat((p.y-(u_mobile?330.0:425.0))/(u_mobile?95.0:125.0))*
+        sat((p.x-(u_mobile?150.0:790.0))/(u_mobile?135.0:340.0));
+      pigment=mix(pigment,u_mobile?vec3(110,183,196):vec3(55,147,163),
+        cool*(u_mobile?.96:.94));
+      pigment*=.68+stain*.63;
+      pigment=mix(pigment,vec3(245,250,245),.04);
+      if(u_mobile){
+        vec2 creamCenter=vec2(u_resolution.x/u_scale*.5,
+          305.0+mobileDelta*.44);
+        vec2 creamDelta=(p-creamCenter)/
+          vec2(u_resolution.x/u_scale*.22,u_resolution.y/u_scale*.15);
+        float creamWash=exp(-dot(creamDelta,creamDelta)*1.3);
+        pigment=mix(pigment,vec3(255,239,201),creamWash*.68);
+      }
+      float dyeCloud=valueNoise(dyeP*.082+vec2(stain*2.7,3.1));
+      vec3 foamColor=mix(pigment,vec3(255,250,244),.18+bubble*.64);
+      foamColor=mix(foamColor,pigment*.88,
+        bubble*sat(.54-dyeCloud)*.10);
+      foamColor=mix(foamColor,vec3(255,253,248),bubble*cellGlint*.10);
+      foamColor=mix(foamColor,vec3(255,255,252),bubbleRim*(.08+bubbleLight*.12));
+      if(seed>.965){
+        float cycle=5.0+seed*4.0;
+        float life=mod(u_time+seed*cycle*4.7,cycle);
+        float rupture=1.0-smoothstep(.0,.34,
+          abs(life-(cycle-2.35)));
+        foamColor=mix(foamColor,vec3(255,255,249),
+          bubbleRim*rupture*.58);
+      }
+      foamColor=mix(foamColor,vec3(255,251,240),
+        membrane*.24);
+      float wetGrain=step(.948,hash2(floor(p*.92+vec2(13.7,5.3))));
+      foamColor=mix(foamColor,vec3(255,255,253),
+        wetGrain*membrane*.08);
+      float edge=sat(1.0-abs(foamSum-.23)/.14);
+      foamColor=mix(foamColor,vec3(255,253,246),edge*.22);
+      float fringe=sat((foamSum-.12)/.22);
+      float filmOpacity=.89-bubble*.29+membrane*.03+bubbleRim*.02;
+      foamColor=mix(foamColor,vec3(255,252,245),foamSpray*.68);
+      float foamAlpha=foamBody*filmOpacity*(.92+.08*fringe)+foamSpray*.39;
+      outColor=vec4(clamp(foamColor/255.0,0.0,1.0),sat(foamAlpha));
+      return;
+    }
+    if(body<.005){
+      float bridge=smoothstep(.0018,.018,bridgeSecond);
+      if(bridge<.005){outColor=vec4(0.0);return;}
+      vec2 cells=(p+vec2(sin(p.y*.047)*2.8,cos(p.x*.041)*3.1))/7.0;
+      vec2 cell=floor(cells),localCell=fract(cells);
+      float nearCell=10.0,secondCell=10.0;
+      for(int y=-1;y<=1;y++)for(int x=-1;x<=1;x++){
+        vec2 n=vec2(float(x),float(y));
+        vec2 jitter=vec2(hash2(cell+n),hash2(cell+n+vec2(24.3,9.8)))*.8+.1;
+        float distance=length(n+jitter-localCell);
+        if(distance<nearCell){secondCell=nearCell;nearCell=distance;}
+        else if(distance<secondCell)secondCell=distance;
+      }
+      float membrane=1.0-smoothstep(.025,.14,secondCell-nearCell);
+      float pore=1.0-smoothstep(.23,.42,nearCell);
+      vec3 pigment=mix(vec3(221,113,147),vec3(238,187,116),sat((p.x+p.y-280.0)/390.0));
+      vec3 bridgeColor=mix(pigment,vec3(255,252,245),pore*.64+membrane*.60);
+      outColor=vec4(bridgeColor/255.0,bridge*(.12+membrane*.15+pore*.04));
+      return;
+    }
+    float rim=smoothstep(.78,.965,d)*(1.0-smoothstep(1.0,1.055,d));
+    float innerRim=smoothstep(.86,.965,d)*(1.0-smoothstep(.985,1.015,d));
+    float angle=atan(local.y,local.x);
+    float light=sat(.48-local.x*.33-local.y*.55);
+    float glint=exp(-pow((d-.86)/.052,2.0))*pow(sat(1.0-abs(angle+2.12)/.64),2.0);
+    vec3 pink=vec3(221,105,139),peach=vec3(242,156,107),yellow=vec3(235,196,107);
+    vec3 pigment=mix(pink,peach,sat((p.x-60.0)/310.0));
+    pigment=mix(pigment,yellow,sat((p.y-280.0)/260.0)*.65);
+    if(!u_mobile)pigment=mix(pigment,vec3(142,205,204),sat((p.x-850.0)/360.0)*.5);
+    float liquid=valueNoise(p*.028+vec2(float(max(owner,0))*.73,1.7));
+    float caustic=sin(p.x*.092+sin(p.y*.041)*2.8)*sin(p.y*.076-p.x*.034);
+    float waterRings=sin(p.x*.075+sin(p.y*.041)*1.8)*
+      sin(p.y*.081+cos(p.x*.037)*1.6);
+    float dye=.29+.43*pow(sat(d),1.5)+(liquid-.5)*.22;
+    vec3 color=mix(vec3(250,252,249),pigment,dye);
+    if(!mainBubble&&!pictureBubble)
+      color=mix(vec3(66,155,164),vec3(185,231,225),liquid);
+    color+=vec3(13,18,20)*sat((caustic-.22)*1.4)*(1.0-rim);
+    if(mainBubble&&!pictureBubble){
+      float water=sat(waterRings*.31+caustic*.20+.52);
+      vec3 waterTint=owner==4?
+        mix(vec3(34,105,124),vec3(126,200,191),water):
+        mix(vec3(181,82,132),vec3(246,179,185),water);
+      waterTint=mix(waterTint,pigment*.87,owner==4?.05:.20);
+      color=mix(color,waterTint,(owner==4?.72:.61)*(1.0-rim));
+      color=mix(color,vec3(247,255,252),pow(water,3.0)*.16*(1.0-rim));
+      if(owner==4||owner==0){
+        float waveA=sin(p.x*.105+sin(p.y*.051)*2.1);
+        float waveB=sin(p.y*.112+sin(p.x*.043)*2.0);
+        float waterLight=pow(1.0-abs(waveA-waveB)*.5,9.0);
+        color=mix(color,owner==4?vec3(229,255,246):vec3(255,233,237),
+          waterLight*(owner==4?.10:.08)*(1.0-rim));
+      }
+    }
+    color=mix(color,vec3(255,255,255),rim*(.07+.19*light)+glint*.25);
+    color=mix(color,pigment*.81,innerRim*(1.0-light)*.22);
+    int screenIndex=owner==1?0:(owner==3?1:(owner==2?2:-1));
+    if(pictureBubble&&screenIndex>=0&&u_hasImage){
+      vec4 rect=u_screenRects[screenIndex];
+      vec2 uv=(p-rect.xy)/(rect.zw-rect.xy);
+      vec2 refracted=clamp(uv+local*pow(sat(d-.57),2.0)*.039,
+        vec2(.001),vec2(.999));
+      vec3 screen=screenIndex==1&&u_hasTagsImage?
+        texture(u_tagsImage,vec2(refracted.x,1.0-refracted.y)).rgb:
+        (screenIndex==2&&u_hasPrivateImage?
+          texture(u_privateImage,vec2(refracted.x,1.0-refracted.y)).rgb:
+          texture(u_image,vec2(refracted.x,1.0-refracted.y)).rgb);
+      vec3 filmTint=mix(vec3(191,226,219),pigment,.48);
+      float paleScreen=smoothstep(.67,.97,
+        dot(screen,vec3(.2126,.7152,.0722)));
+      vec3 enclosedScreen=mix(screen*255.0,filmTint,
+        .075+smoothstep(.63,.97,d)*.16+paleScreen*.12);
+      float edgeFade=screenIndex==0?.38:.68;
+      color=mix(enclosedScreen,color,smoothstep(.72,.97,d)*edgeFade);
+      color=mix(color,vec3(255,255,255),rim*(.07+.24*light)+glint*.28);
+      if(screenIndex>0){
+        float thinFilm=smoothstep(.80,.91,d)*
+          (1.0-smoothstep(.97,1.02,d));
+        vec3 filmHue=mix(vec3(150,219,218),vec3(255,198,185),
+          sat(.5+.5*sin(angle*2.1+float(owner))));
+        color=mix(color,filmHue,thinFilm*(.10+.09*light));
+        float porous=smoothstep(.80,.94,d)*
+          smoothstep(.46,.70,valueNoise(p*.23+vec2(float(owner)*2.7,4.1)));
+        color=mix(color,pigment*.86,porous*.28);
+      }
+    }
+    float contourD=d+(mainBubble&&!pictureBubble?
+      (valueNoise(p*.14+vec2(float(owner)*3.7,1.9))-.5)*.044:0.0);
+    float contour=smoothstep(.94,.985,contourD)*
+      (1.0-smoothstep(1.01,1.055,contourD));
+    color=mix(color,pigment,contour*(pictureBubble?.28:.20));
+    color=mix(color,vec3(255,255,251),
+      contour*(mainBubble&&!pictureBubble?.72:light*.39));
+    color=mix(color,vec3(179,225,223),contour*light*.13);
+    if(mainBubble&&!pictureBubble){
+      float lace=sat((d-.83)/.13)*
+        sat(.35+valueNoise(p*.23+vec2(float(owner)*4.1,2.7))*.85);
+      float droplets=step(.82,hash2(floor(p*1.3+vec2(float(owner)*13.0))))*lace;
+      color=mix(color,vec3(255,254,246),droplets*.40+lace*light*.17);
+    }
+    float speck=hash2(floor(p*1.3));
+    float wet=smoothstep(.68,.96,d)*(speck>.93?.55:1.0);
+    float alpha=pictureBubble?(owner==1?.92:.90):(mainBubble?((owner==4?.62:.53)+rim*.23):(.34+wet*.07+rim*.40));
+    outColor=vec4(clamp(color/255.0,0.0,1.0),body*alpha);
+    return;
+  }
+  vec2 warp=vec2(
+    sin(p.y*.035+sin(p.x*.014)*2.0)*9.0+sin(p.x*.023+p.y*.037)*4.0,
+    sin(p.x*.028+sin(p.y*.021)*2.0)*8.0+cos(p.y*.02-p.x*.034)*4.0);
+  float sum=0.0,coreSum=0.0,first=0.0,coreFirst=0.0,nearest=1e6,runner=1e6;
+  int owner=-1,coreOwner=-1;
+  for(int i=0;i<MAX_SITES;i++){
+    if(i>=u_count)break;
+    vec4 site=u_sites[i];vec2 d=p-site.xy;
+    if(u_mobile)d.y*=.82;
+    if(abs(d.x)>site.z+12.0||abs(d.y)>site.z+12.0)continue;
+    vec2 bent=d+warp*.45;
+    float squared=dot(bent,bent)/(site.z*site.z);
+    if(squared>=1.0)continue;
+    float influence=(1.0-squared)*(1.0-squared)*site.w;
+    sum+=influence;
+    if(i<u_coreCount){coreSum+=influence;if(influence>coreFirst){coreFirst=influence;coreOwner=i;}}
+    if(influence>first){first=influence;owner=i;}
+    float score=length(d+warp)-site.z*.22;
+    if(score<nearest){runner=nearest;nearest=score;}
+    else if(score<runner)runner=score;
+  }
+  float body=sat((sum-.12)/.24)*sat((coreSum-.025)/.13);
+  if(u_singleLayer&&u_mobile){
+    float mobileDelta=u_resolution.y/u_scale-680.0;
+    vec2 cloud=(p-vec2(u_resolution.x/u_scale*.44,310.0+mobileDelta*.435))/
+      vec2(u_resolution.x/u_scale*.49,170.0+mobileDelta*.20);
+    cloud+=vec2(valueNoise(p*.026)-.5,valueNoise(p*.026+vec2(7.2,4.5))-.5)*.065;
+    float cloudMask=1.0-smoothstep(.91,1.06,length(cloud));
+    float chamberMask=0.0;
+    for(int i=0;i<3;i++){
+      if((i==0&&!u_hasImage)||(i==1&&!u_hasTagsImage)||(i==2&&!u_hasPrivateImage))continue;
+      vec4 rect=u_screenRects[i];
+      vec2 center=(rect.xy+rect.zw)*.5;
+      vec2 halfSize=max((rect.zw-rect.xy)*.5,vec2(1.0));
+      chamberMask=max(chamberMask,1.0-smoothstep(.88,1.04,length((p-center)/halfSize)));
+    }
+    body*=max(cloudMask,chamberMask);
+  }
+  if(body<.01){outColor=vec4(0.0);return;}
+  float boundary=runner<1e5?sat(1.0-(runner-nearest)/8.0):0.0;
+  float outer=sat(1.0-abs(sum-.22)/.11)*(runner>1e5?1.0:.28);
+  float grain=fract(sin(dot(floor(p*.42),vec2(127.1,311.7)))*43758.5453);
+  float pore=grain>.82?.48:1.0;
+  float foam=sat(max(boundary*.62,outer)*(.54+grain*.22)*pore);
+  vec2 microP=(p+warp*.12+vec2(
+    sin(p.y*.21+p.x*.14)*2.4+valueNoise(p*.031)*5.0,
+    cos(p.x*.18-p.y*.12)*2.4+valueNoise(p*.031+vec2(13.7,4.2))*5.0
+  ))/(u_singleLayer?(u_mobile?13.5:18.0):10.0);
+  vec2 microCell=floor(microP);
+  vec2 microLocal=fract(microP);
+  float microDistance=10.0,microSecond=10.0,microSeed=0.0;
+  vec2 microOffset=vec2(0.0);
+  for(int oy=-1;oy<=1;oy++)for(int ox=-1;ox<=1;ox++){
+    vec2 neighbor=vec2(float(ox),float(oy));
+    vec2 offset;
+    float seed;
+    float life=1.0;
+    if(u_singleLayer){
+      ivec2 cell=ivec2(microCell)+ivec2(ox,oy)-u_microOrigin;
+      ivec2 dimensions=textureSize(u_microParticles,0);
+      if(any(lessThan(cell,ivec2(0)))||any(greaterThanEqual(cell,dimensions)))continue;
+      vec4 particle=texelFetch(u_microParticles,cell,0);
+      if(particle.a<.02)continue;
+      offset=particle.xy-microP;
+      seed=particle.z;
+      life=particle.a;
+    }else{
+      vec2 jitter=vec2(hash2(microCell+neighbor),hash2(microCell+neighbor+vec2(27.3,8.7)));
+      offset=neighbor+jitter*.98+.01-microLocal;
+      seed=hash2(microCell+neighbor+vec2(45.2,17.6));
+    }
+    float candidate=length(offset)-seed*.18+(1.0-life)*.55;
+    if(candidate<microDistance){microSecond=microDistance;microDistance=candidate;microOffset=offset;microSeed=seed;}
+    else if(candidate<microSecond)microSecond=candidate;
+  }
+  float edgeGap=microSecond-microDistance;
+  float microRim=1.0-smoothstep(.012,.115,edgeGap);
+  float microPore=smoothstep(.055,.20,edgeGap);
+  float bubbleWall=1.0-smoothstep(.025,.14,edgeGap);
+  float microLight=sat(dot(-microOffset/max(microDistance,.001),vec2(-.55,-.84))*.5+.5);
+  vec2 largeP=(p+warp*.27)/25.0;
+  vec2 largeCell=floor(largeP),largeLocal=fract(largeP);
+  float largePore=0.0,largeRing=0.0,largeHighlight=0.0,largeShadow=0.0,largeGlint=0.0;
+  for(int ly=-1;ly<=1;ly++)for(int lx=-1;lx<=1;lx++){
+    vec2 cell=largeCell+vec2(float(lx),float(ly));
+    float seed=hash2(cell+vec2(61.3,28.9));
+    vec2 center=vec2(float(lx),float(ly))+
+      vec2(hash2(cell+vec2(19.7,4.1)),hash2(cell+vec2(3.4,73.2)))*.78+.11;
+    float radius=(.14+pow(hash2(cell+vec2(7.1,92.4)),2.0)*.32)*step(.86,seed);
+    float distance=length(largeLocal-center);
+    largePore=max(largePore,(1.0-smoothstep(radius-.06,radius+.015,distance))*step(.001,radius));
+    float ring=(smoothstep(radius-.095,radius-.035,distance)-
+      smoothstep(radius+.015,radius+.075,distance))*step(.001,radius);
+    float lit=sat(dot((largeLocal-center)/max(distance,.001),vec2(-.53,-.85))*.7+.35);
+    largeRing=max(largeRing,ring);
+    largeHighlight=max(largeHighlight,ring*lit);
+    largeShadow=max(largeShadow,ring*(1.0-lit));
+    float innerGlint=exp(-pow((distance-radius*.67)/max(radius*.17,.018),2.0))*
+      pow(lit,3.0)*step(.001,radius);
+    largeGlint=max(largeGlint,innerGlint);
+  }
+  vec2 uv=p/vec2(u_resolution.x/u_scale,u_resolution.y/u_scale);
+  vec2 desktopPositions[5]=vec2[5](vec2(.51,.33),vec2(.79,.23),vec2(.73,.65),vec2(.56,.77),vec2(.91,.76));
+  vec2 mobilePositions[5]=vec2[5](vec2(.24,.41),vec2(.76,.37),vec2(.61,.54),vec2(.12,.86),vec2(.97,.86));
+  vec3 desktopColors[5]=vec3[5](vec3(228,105,131),vec3(236,153,104),vec3(224,190,94),vec3(48,147,151),vec3(42,97,150));
+  vec3 mobileColors[5]=vec3[5](vec3(239,134,158),vec3(240,135,120),vec3(243,207,106),vec3(166,212,204),vec3(155,194,210));
+  vec3 color=vec3(0.0);float total=0.0;
+  for(int i=0;i<5;i++){
+    vec2 d=(uv-(u_mobile?mobilePositions[i]:desktopPositions[i]))*vec2(1.2,1.35);
+    float falloff=1.0/(.012+dot(d,d));float weight=falloff*falloff;
+    color+=(u_mobile?mobileColors[i]:desktopColors[i])*weight;total+=weight;
+  }
+  color/=total;
+  float wave=sin(p.x*.045+sin(p.y*.028)*2.8)+sin(p.y*.062-p.x*.02)*.6;
+  float caustic=sin(p.x*.092+sin(p.y*.035)*4.3)*sin(p.y*.068+sin(p.x*.027)*3.6);
+  float glow=sat(first)*18.0+wave*5.0+sat((caustic-.43)*2.1)*20.9;
+  float depth=sat((runner-nearest)/58.0),shade=1.0-depth*.06;
+  float stain=(valueNoise(p*.018)*.65+valueNoise(p*.065)*.35-.5)*23.0;
+  color=(color+glow*vec3(.7,.6,.48)+(grain-.5)*10.0+
+    stain*vec3(1.1,.8,.55))*shade;
+  float exposedMicro=microPore*(1.0-largePore);
+  vec3 pearl=mix(color,vec3(252,251,246),.52)+vec3(7,-3,5)*(microSeed-.5);
+  color=mix(color,pearl,exposedMicro*.72);
+  float lens=pow(sat(1.0-microDistance/.95),2.0);
+  color=mix(color,vec3(252,255,252),lens*.12*(1.0-largePore));
+  color=mix(color,vec3(237,253,249),largePore*.38);
+  color=mix(color,color*vec3(.73,.59,.56),largeShadow*.48);
+  color=mix(color,vec3(255,255,251),largeHighlight*.73);
+  color=mix(color,vec3(255,255,251),largeGlint*.22);
+  color=mix(color,vec3(248,255,250),microRim*.33*(1.0-largePore));
+  color=mix(color,vec3(81,159,166),bubbleWall*.055*(1.0-largePore)*(1.0-microLight));
+  color=mix(color,vec3(255,251,226),bubbleWall*.74*(1.0-largePore)*pow(microLight,2.0));
+  color=mix(color,vec3(255,252,246),foam*(.25+grain*.06));
+  vec3 sharedMembrane=color;
+  if(coreFirst>.075)owner=coreOwner;
+  int screenIndex=owner==1?0:(owner==3?1:(owner==2?2:-1));
+  float screenCoverage=0.0;
+  bool screenReady=screenIndex==0?u_hasImage:(screenIndex==1?u_hasTagsImage:u_hasPrivateImage);
+  if(screenIndex>=0&&screenReady){
+    vec4 screenRect=u_screenRects[screenIndex];
+    vec2 screenUV=(p-screenRect.xy)/(screenRect.zw-screenRect.xy);
+    if(all(greaterThanEqual(screenUV,vec2(0.0)))&&all(lessThanEqual(screenUV,vec2(1.0)))){
+      vec2 chamber=(screenUV-.5)*2.0;
+      float angle=atan(chamber.y,chamber.x);
+      float membrane=1.035+.021*sin(angle*5.0+float(screenIndex)*.9)+.011*sin(angle*9.0+1.4);
+      float ellipse=length(chamber)*membrane;
+      float edge=sat((ellipse-.60)/.40);
+      vec2 refractedUV=clamp(screenUV+chamber*edge*edge*.018,vec2(.001),vec2(.999));
+      vec3 screen=screenIndex==1?
+        texture(u_tagsImage,vec2(refractedUV.x,1.0-refractedUV.y)).rgb:
+        (screenIndex==2?
+          texture(u_privateImage,vec2(refractedUV.x,1.0-refractedUV.y)).rgb:
+          texture(u_image,vec2(refractedUV.x,1.0-refractedUV.y)).rgb);
+      float fade=1.0-smoothstep(.94,1.015,ellipse);
+      screenCoverage=fade;
+      float innerShade=smoothstep(.72,.985,ellipse)*(1.0-smoothstep(.985,1.01,ellipse));
+      float brightRim=smoothstep(.915,.975,ellipse)*(1.0-smoothstep(1.0,1.025,ellipse));
+      float topLight=sat(.52-chamber.y*.57-chamber.x*.28);
+      float paper=smoothstep(.65,.96,dot(screen,vec3(.299,.587,.114)));
+      float screenOpacity=mix(.97,.88,paper);
+      color=mix(color,screen*255.0,screenOpacity*fade);
+      color=mix(color,color*vec3(.83,.87,.86),innerShade*.28*fade);
+      color=mix(color,vec3(255,255,252),brightRim*(.24+.28*topLight));
+      color=mix(color,vec3(119,182,180),brightRim*(1.0-topLight)*.25);
+      float glint=exp(-pow((ellipse-.84)/.045,2.0))*
+        pow(sat(1.0-abs(angle+2.17)/.70),2.0);
+      color=mix(color,vec3(255,255,255),glint*.35);
+      float joinedEdge=smoothstep(.94,.985,ellipse)*(1.0-smoothstep(1.005,1.035,ellipse));
+      color=mix(color,sharedMembrane,joinedEdge*.16);
+    }
+  }
+  float porousAlpha=.72+microRim*.17-largePore*.16-exposedMicro*.13;
+  outColor=vec4(clamp(color/255.0,0.0,1.0),body*mix(porousAlpha,.98,screenCoverage));
+}`;
+let glProgram=null,glBuffer=null,glTextures=[],glImageReady=[false,false,false],glUniforms=null,glSites=null,glCaptured=false,glFrames=0;
+let glMicroTexture=null,glMicroGridRef=null;
+function initGL(){
+  try{
+    gl=glCanvas.getContext('webgl2',{alpha:true,antialias:true,premultipliedAlpha:false,
+      preserveDrawingBuffer:params.has('capture')});
+    if(!gl)return false;
+    function compile(type,source){const shader=gl.createShader(type);gl.shaderSource(shader,source);gl.compileShader(shader);
+      if(!gl.getShaderParameter(shader,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(shader));return shader}
+    const vertex=compile(gl.VERTEX_SHADER,`#version 300 es\nprecision highp float;\nin vec2 a_position;\nvoid main(){gl_Position=vec4(a_position,0.0,1.0);}`);
+    const fragment=compile(gl.FRAGMENT_SHADER,fragmentSource);
+    glProgram=gl.createProgram();gl.attachShader(glProgram,vertex);gl.attachShader(glProgram,fragment);gl.linkProgram(glProgram);
+    if(!gl.getProgramParameter(glProgram,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(glProgram));
+    gl.useProgram(glProgram);
+    glBuffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,glBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
+    const position=gl.getAttribLocation(glProgram,'a_position');gl.enableVertexAttribArray(position);gl.vertexAttribPointer(position,2,gl.FLOAT,false,0,0);
+    glUniforms=Object.fromEntries(['u_resolution','u_scale','u_count','u_coreCount','u_sites[0]','u_image','u_tagsImage','u_privateImage','u_hasImage','u_hasTagsImage','u_hasPrivateImage','u_mobile','u_macro','u_time','u_singleLayer','u_microParticles','u_microOrigin','u_screenRects[0]'].map(name=>[name,gl.getUniformLocation(glProgram,name)]));
+    glSites=new Float32Array(128*4);
+    for(let i=0;i<screenImages.length;i++){
+      const texture=gl.createTexture();glTextures.push(texture);
+      gl.activeTexture(gl.TEXTURE0+i);gl.bindTexture(gl.TEXTURE_2D,texture);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE)}
+    glMicroTexture=gl.createTexture();gl.activeTexture(gl.TEXTURE3);
+    gl.bindTexture(gl.TEXTURE_2D,glMicroTexture);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);
+    gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA32F,1,1,0,gl.RGBA,gl.FLOAT,new Float32Array([0,0,0,1]));
+    gl.uniform1i(glUniforms.u_image,0);
+    gl.uniform1i(glUniforms.u_tagsImage,1);
+    gl.uniform1i(glUniforms.u_privateImage,2);
+    gl.uniform1i(glUniforms.u_microParticles,3);
+    glCanvas.style.display='block';canvas.style.display='none';return true;
+  }catch(error){console.warn('WebGL foam unavailable; using Canvas fallback',error);gl=null;return false}
+}
+function drawGL(t){
+  if(params.has('capture')||params.has('debugFrames'))glCanvas.dataset.frames=String(++glFrames);
+  const dt=Math.min(4,(t-lastFrame)/16.7||1);lastFrame=t;update(dt,t);
+  updateMicroParticles(dt,t);
+  const foamSites=buildFoamSites(),count=Math.min(128,foamSites.length);
+  for(let i=0;i<count;i++){const site=foamSites[i],at=i*4;
+    glSites[at]=site.x;glSites[at+1]=site.y;glSites[at+2]=site.reach;glSites[at+3]=site.weight}
+  gl.useProgram(glProgram);gl.uniform2f(glUniforms.u_resolution,glCanvas.width,glCanvas.height);
+  gl.uniform1f(glUniforms.u_scale,glCanvas.width/width);
+  gl.uniform1f(glUniforms.u_time,t*.001);
+  if(microParticles){
+    gl.activeTexture(gl.TEXTURE3);gl.bindTexture(gl.TEXTURE_2D,glMicroTexture);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);
+    const grid=microParticles;
+    if(glMicroGridRef!==grid){
+      gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA32F,grid.cols,grid.rows,0,gl.RGBA,gl.FLOAT,grid.data);
+      glMicroGridRef=grid;
+    }else gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,grid.cols,grid.rows,gl.RGBA,gl.FLOAT,grid.data);
+    gl.uniform2i(glUniforms.u_microOrigin,grid.origin,grid.origin);
+  }
+  gl.uniform1i(glUniforms.u_count,count);gl.uniform1i(glUniforms.u_coreCount,variant===2?4:5);
+  gl.uniform4fv(glUniforms['u_sites[0]'],glSites);
+  composeMainScreen();
+  for(let i=0;i<screenImages.length;i++){
+    const source=screenImages[i];
+    if(glImageReady[i]||(i===0?!mainScreenReady:!source.complete||!source.naturalWidth))continue;
+    gl.activeTexture(gl.TEXTURE0+i);gl.bindTexture(gl.TEXTURE_2D,glTextures[i]);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);
+    gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,source);glImageReady[i]=true}
+  gl.uniform1i(glUniforms.u_hasImage,glImageReady[0]?1:0);
+  gl.uniform1i(glUniforms.u_hasTagsImage,glImageReady[1]?1:0);
+  gl.uniform1i(glUniforms.u_hasPrivateImage,glImageReady[2]?1:0);
+  gl.uniform1i(glUniforms.u_mobile,width<=760?1:0);
+  gl.uniform1i(glUniforms.u_macro,
+    variant===1&&params.get('material')!=='fine'?1:0);
+  gl.uniform1i(glUniforms.u_singleLayer,
+    variant===1&&params.get('material')==='fine'?1:0);
+  const screenRects=[];
+  for(const [siteIndex,xScale,yScale] of [[1,width<=760?.60:.68,width<=760?1.13:1.02],[3,width<=760?.95:.70,width<=760?.65:.57],[2,width<=760?.82:.67,width<=760?.417:.57]]){
+    const screen=sites[siteIndex],spanX=screen.r*xScale,spanY=screen.r*yScale*(width<=760?1.2:1);
+    screenRects.push(screen.x-spanX,screen.y-spanY,screen.x+spanX,screen.y+spanY)}
+  gl.uniform4fv(glUniforms['u_screenRects[0]'],new Float32Array(screenRects));
+  gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);gl.drawArrays(gl.TRIANGLES,0,3);
+  if(params.has('capture')&&!glCaptured&&glImageReady.every(Boolean)){
+    gl.finish();const preview=document.createElement('canvas');
+    preview.width=glCanvas.width;preview.height=glCanvas.height;
+    const paint=preview.getContext('2d');
+    paint.fillStyle='#eeeae9';paint.fillRect(0,0,preview.width,preview.height);
+    const pink=paint.createRadialGradient(preview.width*.10,preview.height*.34,0,
+      preview.width*.10,preview.height*.34,Math.max(preview.width,preview.height)*.48);
+    pink.addColorStop(0,'#f7d7e2');pink.addColorStop(1,'#f7d7e200');
+    paint.fillStyle=pink;paint.fillRect(0,0,preview.width,preview.height);
+    const mint=paint.createRadialGradient(preview.width*.95,preview.height*.40,0,
+      preview.width*.95,preview.height*.40,Math.max(preview.width,preview.height)*.62);
+    mint.addColorStop(0,'#cdeee9');mint.addColorStop(1,'#cdeee900');
+    paint.fillStyle=mint;paint.fillRect(0,0,preview.width,preview.height);
+    paint.drawImage(glCanvas,0,0);
+    glCanvas.dataset.capture=preview.toDataURL('image/png');glCaptured=true}
+}
+function screenAt(x,y){
+  const mobile=width<=760;
+  for(const [index,siteIndex,xScale,yScale,source] of [
+    [0,1,mobile?.60:.68,mobile?1.13:1.02,image],
+    [1,3,mobile?.95:.70,mobile?.65:.57,tagsImage],
+    [2,2,mobile?.82:.67,mobile?.417:.57,privateImage]]){
+    if(!source.complete||!source.naturalWidth)continue;
+    const site=sites[siteIndex],rx=site.r*xScale,ry=site.r*yScale*(mobile?1.2:1);
+    if(((x-site.x)/rx)**2+((y-site.y)/ry)**2<.82)return index;
+  }
+  return -1;
+}
+function openScreen(index){
+  const source=[image,tagsImage,privateImage][index];
+  document.querySelector('#fullImage').src=source.src;
+  document.querySelector('#overlay').classList.add('is-open');
+  document.querySelector('#close').focus();
+}
+for(const surface of [canvas,glCanvas]){
+  let press=null;
+  surface.addEventListener('pointermove',e=>{
+    pointer.x=e.clientX;pointer.y=e.clientY;
+    surface.style.cursor=screenAt(e.clientX,e.clientY)>=0?'pointer':'crosshair';
+  });
+  surface.addEventListener('pointerdown',e=>{
+    pointer.down=true;pointer.x=e.clientX;pointer.y=e.clientY;
+    press={x:e.clientX,y:e.clientY,at:performance.now()};
+    surface.setPointerCapture(e.pointerId);
+  });
+  surface.addEventListener('pointerup',e=>{
+    pointer.down=false;pointer.x=e.clientX;pointer.y=e.clientY;
+    if(press&&Math.hypot(e.clientX-press.x,e.clientY-press.y)<9&&
+      performance.now()-press.at<650){
+      const index=screenAt(e.clientX,e.clientY);
+      if(index>=0)openScreen(index);
+    }
+    press=null;
+  });
+  surface.addEventListener('pointercancel',()=>{pointer.down=false;press=null});
+  surface.addEventListener('pointerleave',()=>{
+    if(!pointer.down){pointer.x=-1000;pointer.y=-1000;pointer.previousX=-1000;pointer.previousY=-1000}
+  });
+  surface.addEventListener('keydown',e=>{
+    if(e.key==='Enter'||e.key===' '){e.preventDefault();openScreen(0)}
+  });
+}
+function setVariant(n){variant=(n+3)%3;reset()}document.querySelector('#prev').onclick=()=>setVariant(variant-1);document.querySelector('#next').onclick=()=>setVariant(variant+1);
+window.addEventListener('keydown',e=>{if(e.key==='ArrowLeft')setVariant(variant-1);if(e.key==='ArrowRight')setVariant(variant+1);if(e.key==='Escape')document.querySelector('#overlay').classList.remove('is-open')});
+document.querySelector('#close').onclick=()=>document.querySelector('#overlay').classList.remove('is-open');
+window.addEventListener('resize',resize);const webglReady=!params.has('forceCanvas')&&initGL();resize();
+if(webglReady){drawGL(performance.now());image.decode().then(()=>drawGL(performance.now())).catch(()=>{});}
+else draw(performance.now());
+function tick(){if(!document.hidden)(webglReady?drawGL:draw)(performance.now());
+  setTimeout(tick,webglReady?16:70)}
+setTimeout(tick,webglReady?16:70);
+</script>
+</body>
+</html>

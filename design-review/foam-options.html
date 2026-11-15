@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>梦潮｜泡壁四个方向</title>
+<style>
+  :root { --ground: #eef1f0; --ink: #1f3b49; --ink-soft: #5a7180; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #e4e8e7; color: var(--ink); font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif; }
+  main { max-width: 1340px; margin: 0 auto; padding: 32px 20px 48px; }
+  h1 { font-family: "Noto Serif SC", "Songti SC", STSong, serif; font-weight: 600; font-size: 28px; margin: 0 0 6px; }
+  .lead { margin: 0 0 28px; color: var(--ink-soft); font-size: 15px; }
+  .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; }
+  figure { margin: 0; }
+  .frame { position: relative; aspect-ratio: 16 / 10; background: var(--ground); overflow: hidden; border-radius: 6px; }
+  .frame canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .copy { position: absolute; left: 6%; top: 50%; transform: translateY(-50%); width: 34%; }
+  .copy h2 { margin: 0 0 10px; font-family: "Noto Serif SC", "Songti SC", STSong, serif; font-weight: 600; font-size: clamp(20px, 2.6vw, 34px); letter-spacing: .04em; }
+  .copy p { margin: 0; font-size: clamp(10px, .95vw, 13px); line-height: 1.8; color: var(--ink-soft); }
+  figcaption { padding: 14px 2px 0; }
+  figcaption b { font-family: "Noto Serif SC", "Songti SC", STSong, serif; font-size: 19px; font-weight: 600; }
+  figcaption b span { color: var(--ink-soft); font-weight: 500; margin-right: 8px; }
+  figcaption p { margin: 6px 0 0; font-size: 14px; line-height: 1.7; color: var(--ink-soft); }
+  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>泡壁的四个方向</h1>
+  <p class="lead">同一画面（第 2 章「梦的层次」），只换泡壁和周围装饰的画法。四个方向都不用成片的小圆点。</p>
+  <div class="grid" id="grid"></div>
+</main>
+<script>
+(() => {
+  const options = [
+    { id: 'A', name: '水彩泡膜', refs: 'ref-23 · ref-24', text: '泡壁是一道化开的水彩颜料，边缘颜色更深，交汇处晕成一团。换章时颜料像遇水一样化开，流到新位置再干成新的泡壁。' },
+    { id: 'B', name: '墨线手绘', refs: 'ref-16 · ref-21', text: '泡壁是两道略带抖动的细墨线，只在泡与泡相交的地方晕一点颜色。换章时墨线被水流拉长、断开，在新位置重新画出来。' },
+    { id: 'C', name: '透明泡膜', refs: 'ref-22', text: '泡壁是一圈薄薄的彩虹膜，带白色高光，泡里完全透明。换章时泡膜破成几只大肥皂泡飘过去，再合成新的泡。' },
+    { id: 'D', name: '色雾开孔', refs: 'ref-24 · ref-20', text: '泡群后面是一团柔和的彩色雾，泡就是雾里干净的开孔，没有描边。换章时色雾像潮水一样涌动，旧孔合拢，新孔张开。' },
+  ];
+  const pal = [[78, 158, 149], [98, 168, 198], [152, 186, 126]];
+  const rgba = (c, a) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
+  const mix = (a, b, k) => a.map((v, i) => v + (b[i] - v) * k);
+  const palAt = (u) => { const f = (((u % 1) + 1) % 1) * 3, i = Math.floor(f), k = f - i; return mix(pal[i % 3], pal[(i + 1) % 3], k * k * (3 - 2 * k)); };
+
+  // Scene in a 640 x 400 design space: a screenshot pebble and three round satellites.
+  const main = { x: 430, y: 200, hw: 104, hh: 166, k: .78 };
+  const ellReach = (c, a) => 1 / Math.sqrt((Math.cos(a) / c.hw) ** 2 + (Math.sin(a) / c.hh) ** 2);
+  const sat = (deg, r, label) => { const a = deg * Math.PI / 180, d = ellReach(main, a) + r * .55; return { x: main.x + Math.cos(a) * d, y: main.y + Math.sin(a) * d, hw: r, hh: r, k: 1, label }; };
+  const sats = [sat(-24, 50, '标签'), sat(30, 46, '隐私'), sat(196, 18)];
+  const cells = [main, ...sats];
+
+  function pebblePath(ctx, c, wob = 0, seed = 0) {
+    // Rounded rect with elliptical corners; optional hand-drawn wobble.
+    const crx = c.hw * c.k, cry = c.hh * c.k, sx = c.hw - crx, sy = c.hh - cry;
+    const pts = [];
+    const N = 160;
+    for (let i = 0; i < N; i++) {
+      const a = i / N * Math.PI * 2, ca = Math.cos(a), sa = Math.sin(a);
+      let x = c.x + Math.sign(ca) * sx + ca * crx, y = c.y + Math.sign(sa) * sy + sa * cry;
+      if (Math.abs(ca) < 1e-9) x = c.x + ca * crx;
+      if (wob) { const n = Math.sin(a * 3 + seed) * .6 + Math.sin(a * 7 + seed * 2) * .4; x += ca * n * wob; y += sa * n * wob; }
+      pts.push([x, y, a]);
+    }
+    ctx.beginPath();
+    pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+    ctx.closePath();
+    return pts;
+  }
+  // Draw the smaller cells only outside the main pebble, so they share its wall.
+  function outsideMain(ctx, fn) {
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0, 0, 640, 400);
+    const crx = main.hw * main.k, cry = main.hh * main.k;
+    ctx.roundRect(main.x - main.hw, main.y - main.hh, main.hw * 2, main.hh * 2, [{ x: crx, y: cry }]);
+    ctx.clip('evenodd');
+    fn(); ctx.restore();
+  }
+  function joins() {
+    const out = [];
+    for (const s of sats) {
+      let prev = null;
+      for (let i = 0; i <= 200; i++) {
+        const a = i / 200 * Math.PI * 2, x = s.x + Math.cos(a) * s.hw, y = s.y + Math.sin(a) * s.hh;
+        const ins = ((x - main.x) / main.hw) ** 2 + ((y - main.y) / main.hh) ** 2 < 1.04;
+        if (prev !== null && ins !== prev) out.push({ x, y, u: a / 6.28 });
+        prev = ins;
+      }
+    }
+    return out;
+  }
+
+  function drawScreen(ctx, img) {
+    const h = main.hh * 2 * .86, w = h * (1260 / 2676), x = main.x - w / 2, y = main.y - h / 2;
+    const off = document.createElement('canvas'); off.width = w * 3; off.height = h * 3;
+    const o = off.getContext('2d');
+    o.drawImage(img, 0, 0, off.width, off.height);
+    o.globalCompositeOperation = 'destination-in';
+    const gv = o.createLinearGradient(0, 0, 0, off.height); gv.addColorStop(0, 'rgba(0,0,0,0)'); gv.addColorStop(.07, '#000'); gv.addColorStop(.93, '#000'); gv.addColorStop(1, 'rgba(0,0,0,0)');
+    o.fillStyle = gv; o.fillRect(0, 0, off.width, off.height);
+    const gh = o.createLinearGradient(0, 0, off.width, 0); gh.addColorStop(0, 'rgba(0,0,0,0)'); gh.addColorStop(.09, '#000'); gh.addColorStop(.91, '#000'); gh.addColorStop(1, 'rgba(0,0,0,0)');
+    o.fillStyle = gh; o.fillRect(0, 0, off.width, off.height);
+    ctx.drawImage(off, x, y, w, h);
+  }
+  function drawLabels(ctx) {
+    ctx.fillStyle = '#1f3b49'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = '500 19px "Noto Serif SC", "Songti SC", STSong, serif';
+    for (const s of sats) if (s.label) ctx.fillText(s.label, s.x + 6, s.y);
+  }
+  function fillInteriors(ctx, color) {
+    for (const c of [...sats].reverse()) { pebblePath(ctx, c); ctx.fillStyle = color; ctx.fill(); }
+    pebblePath(ctx, main); ctx.fillStyle = color; ctx.fill();
+  }
+
+  // ---------- A: watercolour membrane ----------
+  function styleA(ctx) {
+    // Decorations: two soft blooms with pigment dried at the rim.
+    bloom(ctx, 600, 60, 58, .1); bloom(ctx, 300, 345, 44, .55); bloom(ctx, 610, 360, 30, .8);
+    fillInteriors(ctx, 'rgba(250,252,251,.9)');
+    const wash = (c, i) => {
+      const g = ctx.createConicGradient(i * 1.7, c.x, c.y);
+      [0, .33, .66, 1].forEach((t) => g.addColorStop(t, rgba(palAt(t + i * .3), 1)));
+      ctx.save(); ctx.filter = 'blur(5px)'; ctx.globalAlpha = .4; ctx.lineWidth = 13; ctx.strokeStyle = g; pebblePath(ctx, c, 1.5, i); ctx.stroke(); ctx.restore();
+      ctx.save(); ctx.globalAlpha = .55; ctx.lineWidth = 1.6; ctx.strokeStyle = g; pebblePath(ctx, c, 2.2, i + 3); ctx.stroke(); ctx.restore();
+    };
+    outsideMain(ctx, () => sats.forEach((s, i) => wash(s, i + 1)));
+    wash(main, 0);
+    for (const j of joins()) {
+      const g = ctx.createRadialGradient(j.x, j.y, 0, j.x, j.y, 22); const c = palAt(j.u);
+      g.addColorStop(0, rgba(c, .5)); g.addColorStop(1, rgba(c, 0)); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(j.x, j.y, 22, 0, 7); ctx.fill();
+    }
+  }
+  function bloom(ctx, x, y, r, u) {
+    for (let i = 0; i < 3; i++) {
+      const cx = x + Math.cos(i * 2.1 + u * 6) * r * .22, cy = y + Math.sin(i * 2.1 + u * 6) * r * .22, rr = r * (.75 + i * .12);
+      const c = palAt(u + i * .12);
+      const g = ctx.createRadialGradient(cx, cy, rr * .45, cx, cy, rr);
+      g.addColorStop(0, rgba(c, 0)); g.addColorStop(.82, rgba(c, .08)); g.addColorStop(.97, rgba(c, .24)); g.addColorStop(1, rgba(c, 0));
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, rr, 0, 7); ctx.fill();
+    }
+  }
+
+  // ---------- B: ink line ----------
+  function styleB(ctx) {
+    lineBubble(ctx, 598, 70, 40, 1); lineBubble(ctx, 622, 112, 14, 2); lineBubble(ctx, 300, 340, 26, 3); lineBubble(ctx, 560, 368, 9, 4);
+    fillInteriors(ctx, 'rgba(250,252,251,.92)');
+    for (const j of joins()) {
+      const g = ctx.createRadialGradient(j.x, j.y, 0, j.x, j.y, 16); const c = palAt(j.u);
+      g.addColorStop(0, rgba(c, .45)); g.addColorStop(1, rgba(c, 0)); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(j.x, j.y, 16, 0, 7); ctx.fill();
+    }
+    const ink = (c, i) => {
+      ctx.lineWidth = 1.4; ctx.strokeStyle = 'rgba(31,59,73,.75)'; pebblePath(ctx, c, 1.4, i); ctx.stroke();
+      ctx.lineWidth = .8; ctx.strokeStyle = 'rgba(31,59,73,.3)'; pebblePath(ctx, { ...c, hw: c.hw + 3, hh: c.hh + 3 }, 2, i + 5); ctx.stroke();
+    };
+    outsideMain(ctx, () => sats.forEach((s, i) => ink(s, i + 1)));
+    ink(main, 0);
+  }
+  function lineBubble(ctx, x, y, r, seed) {
+    const c = { x, y, hw: r, hh: r, k: 1 };
+    ctx.lineWidth = 1.1; ctx.strokeStyle = 'rgba(31,59,73,.45)'; pebblePath(ctx, c, r * .04, seed); ctx.stroke();
+    ctx.lineWidth = 1.4; ctx.strokeStyle = 'rgba(255,255,255,.95)'; ctx.beginPath(); ctx.arc(x, y, r * .72, Math.PI * 1.1, Math.PI * 1.45); ctx.stroke();
+  }
+
+  // ---------- C: clear film ----------
+  function styleC(ctx) {
+    clearBubble(ctx, 600, 66, 46, .1); clearBubble(ctx, 290, 330, 30, .5); clearBubble(ctx, 616, 356, 18, .8); clearBubble(ctx, 642, 200, 70, .3);
+    fillInteriors(ctx, 'rgba(250,252,251,.55)');
+    const film = (c, i) => {
+      const g = ctx.createConicGradient(i * 1.3 - .6, c.x, c.y);
+      [[0, [214, 138, 168]], [.25, pal[1]], [.5, pal[2]], [.75, [222, 196, 120]], [1, [214, 138, 168]]].forEach(([t, col]) => g.addColorStop(t, rgba(col, 1)));
+      ctx.save(); ctx.shadowColor = rgba(pal[1], .45); ctx.shadowBlur = 10; ctx.lineWidth = 2.2; ctx.strokeStyle = g; ctx.globalAlpha = .85; pebblePath(ctx, c); ctx.stroke(); ctx.restore();
+      ctx.save(); ctx.lineWidth = Math.max(2, c.hw * .035); ctx.strokeStyle = 'rgba(255,255,255,.95)'; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.ellipse(c.x, c.y, c.hw * .86, c.hh * .9, 0, Math.PI * 1.08, Math.PI * 1.4); ctx.stroke(); ctx.restore();
+    };
+    outsideMain(ctx, () => sats.forEach((s, i) => film(s, i + 1)));
+    film(main, 0);
+  }
+  function clearBubble(ctx, x, y, r, u) {
+    const c = { x, y, hw: r, hh: r, k: 1 };
+    const g = ctx.createConicGradient(u * 6, x, y);
+    [[0, [214, 138, 168]], [.33, pal[1]], [.66, pal[2]], [1, [214, 138, 168]]].forEach(([t, col]) => g.addColorStop(t, rgba(col, 1)));
+    const sheen = ctx.createRadialGradient(x, y + r * .3, r * .1, x, y, r);
+    sheen.addColorStop(0, 'rgba(255,255,255,0)'); sheen.addColorStop(.85, rgba(pal[1], .06)); sheen.addColorStop(1, rgba(pal[0], .14));
+    ctx.fillStyle = sheen; pebblePath(ctx, c); ctx.fill();
+    ctx.globalAlpha = .7; ctx.lineWidth = 1.3; ctx.strokeStyle = g; ctx.stroke(); ctx.globalAlpha = 1;
+    ctx.lineWidth = 1.6; ctx.strokeStyle = 'rgba(255,255,255,.95)'; ctx.beginPath(); ctx.arc(x, y, r * .76, Math.PI * 1.1, Math.PI * 1.42); ctx.stroke();
+  }
+
+  // ---------- D: coloured mist with clean openings ----------
+  function styleD(ctx) {
+    ctx.save(); ctx.filter = 'blur(26px)';
+    const blobs = [[470, 70, 110, 0], [560, 240, 130, .34], [380, 330, 120, .67], [330, 150, 90, .2], [600, 380, 90, .5]];
+    for (const [x, y, r, u] of blobs) { const g = ctx.createRadialGradient(x, y, 0, x, y, r); const c = palAt(u); g.addColorStop(0, rgba(c, .55)); g.addColorStop(1, rgba(c, 0)); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); }
+    ctx.restore();
+    // Openings: clean paper with a soft inner edge where the mist meets it.
+    const hole = (c) => {
+      ctx.save(); pebblePath(ctx, c); ctx.fillStyle = '#f7f9f8'; ctx.shadowColor = 'rgba(31,59,73,.18)'; ctx.shadowBlur = 18; ctx.fill(); ctx.restore();
+    };
+    sats.forEach(hole); hole(main);
+    // Two small stray openings drifting in the mist.
+    hole({ x: 610, y: 120, hw: 12, hh: 12, k: 1 }); hole({ x: 335, y: 300, hw: 8, hh: 8, k: 1 });
+  }
+
+  const painters = { A: styleA, B: styleB, C: styleC, D: styleD };
+  const grid = document.getElementById('grid');
+  const img = new Image();
+  img.src = '/dreamtide-website/media/编辑-隐.jpg';
+  img.onload = () => document.fonts.ready.then(() => {
+    for (const o of options) {
+      const fig = document.createElement('figure');
+      fig.innerHTML = `<div class="frame"><canvas></canvas><div class="copy"><h2>梦的层次</h2><p>保存之后，补上情绪、标签和梦里的人。<br>也能写注记，把私密的片段藏起来。</p></div></div>
+        <figcaption><b><span>${o.id}</span>${o.name}</b><p>${o.text}（参考 ${o.refs}）</p></figcaption>`;
+      grid.appendChild(fig);
+      const canvas = fig.querySelector('canvas');
+      const dpr = Math.min(2, devicePixelRatio || 1) * 1.5;
+      canvas.width = 640 * dpr; canvas.height = 400 * dpr;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+      painters[o.id](ctx);
+      drawScreen(ctx, img);
+      drawLabels(ctx);
+    }
+  });
+})();
+</script>
+</body>
+</html>

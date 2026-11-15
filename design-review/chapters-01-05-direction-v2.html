@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>梦潮｜章节 01 与 05 视觉方向稿 v2</title>
+  <style>
+    /* Hallmark · pre-emit critique: P4 H4 E4 S5 R4 V4 */
+    :root {
+      --paper: #eef1ed;
+      --ink: #175c71;
+      --rose: #b75f86;
+      --soft-ink: #478096;
+      --membrane: rgba(255,255,247,.72);
+      --display: "Noto Serif SC", "Songti SC", "SimSun", serif;
+      --ui: "Noto Sans SC", "Microsoft YaHei", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: auto; }
+    body { margin: 0; background: var(--paper); color: var(--ink); }
+    .study {
+      position: relative; width: 100%; min-height: 100svh; overflow: hidden;
+      background: radial-gradient(ellipse at 15% 55%, #efcdd9 0, transparent 55%),
+        radial-gradient(ellipse at 94% 36%, #b6e6e8 0, transparent 52%),
+        linear-gradient(115deg, #f3e2e7, #dfebe9 64%, #c3e4e7);
+      font-family: var(--display);
+    }
+    .study::after {
+      position: absolute; inset: 0; pointer-events: none; content: "";
+      background: url('/dreamtide-website/media/chapter-art/paper.webp') center / cover;
+      opacity: .18; mix-blend-mode: multiply;
+    }
+    .study__frame { position: relative; width: min(100vw, 160svh); height: 100svh; min-height: 660px; margin: auto; }
+    .meta, .footer { position: absolute; z-index: 8; display: flex; align-items: center; justify-content: space-between;
+      left: 4.2%; right: 4.2%; color: #3b7b8e; font-family: var(--ui); font-size: clamp(12px, 1vw, 16px); font-weight: 400; }
+    .meta { top: 4.4%; }
+    .footer { bottom: 5.1%; }
+    .meta strong { font-weight: 400; letter-spacing: .025em; }
+    .meta span:last-child { letter-spacing: .08em; }
+    .footer span:last-child { letter-spacing: .04em; }
+    .foam { position: absolute; overflow: hidden; pointer-events: none; }
+    .foam::after { position: absolute; inset: 0; border: 1.5px solid rgba(255,255,251,.62);
+      border-radius: inherit; content: ""; pointer-events: none; }
+    .foam--home {
+      left: 25.4%; top: 12.2%; width: 66.5%; height: 73.5%;
+      clip-path: url(#home-foam-shape);
+      background: radial-gradient(ellipse at 28% 26%, rgba(103,185,177,.7), transparent 46%),
+        radial-gradient(ellipse at 75% 70%, rgba(86,143,190,.57), transparent 57%),
+        linear-gradient(115deg, rgba(153,212,198,.84), rgba(188,218,227,.88)),
+        url('../media/chapter-art/write-texture.webp') center / cover no-repeat;
+      background-blend-mode: screen, multiply, multiply, normal;
+      box-shadow: inset 0 0 70px rgba(255,255,255,.18), 0 0 44px rgba(121,184,187,.12);
+      transform: rotate(-2deg);
+    }
+    .foam--home::before {
+      position: absolute; inset: 3%; content: "";
+      background: radial-gradient(ellipse at 42% 48%, rgba(238,248,245,.28), rgba(239,247,245,.11) 43%, transparent 68%);
+      mix-blend-mode: screen;
+    }
+    .foam--home span, .foam--words span { position: absolute; display: block; border: 1.5px solid rgba(255,255,249,.48);
+      border-radius: 50% 45% 51% 49% / 47% 52% 48% 53%; }
+    .foam--home span:nth-child(1) { left: 3%; top: 20%; width: 24%; height: 33%; transform: rotate(19deg); }
+    .foam--home span:nth-child(2) { left: 56%; top: 2%; width: 32%; height: 38%; transform: rotate(-8deg); }
+    .foam--home span:nth-child(3) { left: 22%; top: 68%; width: 34%; height: 26%; transform: rotate(-16deg); }
+    .foam--home span:nth-child(4) { left: 72%; top: 59%; width: 24%; height: 25%; transform: rotate(27deg); }
+    .home-title {
+      position: absolute; z-index: 4; left: 23%; top: 20%; width: 65%; margin: 0;
+      filter: drop-shadow(0 6px 11px rgba(25,91,109,.17));
+    }
+    .home-title::before { position: absolute; inset: -9%; content: ""; pointer-events: none;
+      background: radial-gradient(ellipse at center, rgba(223,244,241,.62), transparent 68%); }
+    .home-title canvas { position: relative; display: block; width: 100%; aspect-ratio: 2 / 1; }
+    .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0;
+      margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    .home-copy { position: absolute; z-index: 5; left: 4.8%; top: 39%; max-width: 250px; }
+    .home-copy p { margin: 0; font-size: clamp(25px, 2.1vw, 34px); line-height: 1.45; }
+    .home-copy p + p { color: var(--rose); }
+    .home-copy small { display: block; margin-top: 35%; color: #4d7e8d; font: 14px/1.7 var(--ui); letter-spacing: .04em; }
+    .home-screen {
+      position: absolute; z-index: 5; right: 8.5%; top: 59%; width: 12%; height: 21%;
+      clip-path: polygon(50% 0,66% 2%,80% 8%,91% 19%,98% 33%,100% 49%,97% 66%,89% 80%,77% 93%,63% 100%,48% 98%,31% 94%,16% 83%,6% 67%,0 51%,4% 32%,16% 14%,32% 4%);
+      background: rgba(244,250,248,.68);
+    }
+    .home-screen img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 48%;
+      opacity: .82; mix-blend-mode: multiply; }
+    .home-screen::after { position: absolute; inset: 0; content: "";
+      box-shadow: inset 0 0 19px 12px rgba(158,207,202,.45), inset 0 0 42px 23px rgba(121,186,200,.28);
+      border-radius: 44% 56% 48% 52% / 34% 31% 69% 66%; }
+    .home-side-note { position: absolute; z-index: 5; right: 9%; top: 82%; color: #397b8e;
+      font: 13px var(--ui); letter-spacing: .06em; }
+    .chapter-note { position: absolute; z-index: 6; left: 4.8%; bottom: 18%; color: #3e7e91;
+      font: 14px/1.7 var(--ui); letter-spacing: .03em; }
+    .foam--words {
+      left: 24.4%; top: 9.8%; width: 69%; height: 78%;
+      clip-path: url(#words-foam-shape);
+      background: url('/dreamtide-website/media/chapter-art/record-texture.webp') center / cover,
+        linear-gradient(120deg,#e5b8a5,#bbd3c1);
+      transform: none;
+    }
+    .foam--words::before { position: absolute; inset: 0; content: "";
+      background: radial-gradient(ellipse at 30% 20%, rgba(246,204,173,.45), transparent 55%),
+        radial-gradient(ellipse at 73% 76%, rgba(140,193,200,.5), transparent 60%); mix-blend-mode: screen; }
+    .foam--words span:nth-child(1) { left: -1%; top: 30%; width: 37%; height: 43%; transform: rotate(20deg); }
+    .foam--words span:nth-child(2) { left: 46%; top: 0; width: 44%; height: 40%; transform: rotate(-24deg); }
+    .foam--words span:nth-child(3) { left: 64%; top: 48%; width: 39%; height: 35%; transform: rotate(12deg); }
+    .foam--words span { display: none; }
+    .words-network { position: absolute; z-index: 6; inset: 0; width: 100%; height: 100%;
+      pointer-events: none; filter: blur(.65px); }
+    .words-copy { position: absolute; z-index: 5; left: 4.8%; top: 30%; width: 25%; }
+    .words-copy h2 { margin: 0 0 .55em; font-size: clamp(58px,5vw,80px); font-weight: 400;
+      line-height: 1.12; letter-spacing: -.065em; }
+    .words-copy p { margin: 0; font-size: clamp(23px,1.6vw,28px); line-height: 1.5; }
+    .words-copy p + p { color: var(--rose); }
+    .words-copy small { display: block; margin-top: 33%; color: #4d7e8d; font: 14px/1.7 var(--ui); }
+    .words-screen {
+      position: absolute; z-index: 5; left: 44%; top: 15.2%; width: 25%; height: 69%;
+      clip-path: polygon(48% 0,63% 1%,78% 8%,89% 19%,97% 36%,100% 51%,95% 68%,86% 84%,71% 96%,56% 100%,39% 98%,22% 92%,10% 80%,2% 63%,0 44%,7% 24%,22% 8%);
+      background: rgba(246,249,243,.72);
+    }
+    .words-screen img { width: 100%; height: 100%; object-fit: cover; object-position: center 40%;
+      opacity: .82; mix-blend-mode: multiply; }
+    .words-screen::after { position: absolute; inset: 0; content: "";
+      box-shadow: inset 0 0 20px 12px rgba(227,206,184,.4); border-radius: 43% 57% 45% 55% / 38% 42% 58% 62%; }
+    .word-echo {
+      position: absolute; z-index: 5; right: 7%; top: 40%; width: 18%; height: 24%;
+      display: flex; align-items: center; justify-content: center; padding: 3%;
+      clip-path: polygon(48% 0,70% 3%,89% 15%,100% 40%,96% 65%,78% 87%,53% 100%,24% 93%,5% 74%,0 49%,11% 22%,30% 5%);
+      background: rgba(255,253,239,.75); color: #416b6f; text-align: center;
+      font: 19px/1.45 var(--display);
+    }
+    .words-side-note { position: absolute; z-index: 5; right: 12%; top: 68%;
+      color: #397b8e; font: 13px var(--ui); letter-spacing: .05em; }
+    @media (max-width: 760px), (max-width: 900px) and (orientation: portrait) {
+      .study__frame { width: 100vw; min-height: 0; height: 100svh; }
+      .meta, .footer { left: 5%; right: 5%; font-size: 12px; }
+      .meta { top: 3.3%; } .footer { bottom: 3%; }
+      .foam--home { left: -22%; top: 23%; width: 137%; height: 53%; }
+      .home-title { left: 2%; top: 30%; width: 96%; }
+      .home-title canvas { aspect-ratio: 2 / 1; }
+      .home-copy { left: 6%; top: 12%; max-width: none; }
+      .home-copy p { font-size: 22px; line-height: 1.4; }
+      .home-copy small { display: none; }
+      .home-screen { right: 5%; top: 49%; width: 38%; height: 26%; }
+      .home-side-note { right: 6%; top: 76%; font-size: 10px; }
+      .chapter-note { left: 6%; bottom: 11%; font-size: 12px; }
+      .foam--words { left: -27%; top: 21%; width: 151%; height: 50%; }
+      .words-copy { left: 6%; top: 11%; width: 88%; }
+      .words-copy h2 { font-size: clamp(48px,14vw,62px); margin-bottom: .2em; }
+      .words-copy p { font-size: 18px; }
+      .words-copy small { display: none; }
+      .words-screen { left: 11%; top: 27%; width: 48%; height: 48%; }
+      .word-echo { right: 4%; top: 47%; width: 35%; height: 17%; font-size: 15px; }
+      .words-side-note { right: 7%; top: 74%; font-size: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <svg width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute">
+    <defs>
+      <clipPath id="home-foam-shape" clipPathUnits="objectBoundingBox">
+        <path d="M .05 .35 C -.01 .19 .13 .1 .29 .12 C .43 -.02 .58 .02 .68 .14 C .89 .08 1 .21 .97 .4 C 1.05 .58 .91 .67 .84 .77 C .79 .96 .64 1 .5 .9 C .32 1 .14 .89 .1 .75 C -.03 .65 -.02 .47 .05 .35 Z" />
+      </clipPath>
+      <clipPath id="words-foam-shape" clipPathUnits="objectBoundingBox">
+        <path d="M .07 .34 C -.06 .2 .09 .02 .28 .15 C .4 -.04 .65 -.02 .71 .16 C .93 .06 1.06 .29 .91 .47 C 1.08 .76 .85 .98 .68 .83 C .46 1.03 .22 .9 .26 .75 C .02 .82 -.06 .55 .07 .34 Z" />
+      </clipPath>
+    </defs>
+  </svg>
+  <section class="study study--home" id="chapter-01" aria-label="章节 01 首页方向稿">
+    <div class="study__frame">
+      <header class="meta"><strong>梦潮 DreamTide</strong><span>01 / 06</span></header>
+      <div class="foam foam--home" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+      <div class="home-copy"><p>潮落有迹，</p><p>梦醒留痕。</p><small>在梦消散之前，记下它。</small></div>
+      <h1 class="home-title"><span class="visually-hidden">梦潮 DreamTide</span><canvas aria-hidden="true"></canvas></h1>
+      <div class="home-screen"><img src="../media/首页静帧.png" alt="梦潮首页月历与词云" /></div>
+      <span class="home-side-note">月历 · 词云 · 刻梦</span>
+      <span class="chapter-note">记录梦境，按日期与词语再次找到它。</span>
+      <footer class="footer"><span>梦境手札</span><span>向下滑动 ↓</span></footer>
+    </div>
+  </section>
+  <section class="study study--words" id="chapter-05" aria-label="章节 05 词云方向稿">
+    <div class="study__frame">
+      <header class="meta"><strong>梦潮 DreamTide</strong><span>05 / 06</span></header>
+      <div class="foam foam--words" aria-hidden="true"><span></span><span></span><span></span></div>
+      <div class="words-copy"><h2>词语浮现</h2><p>看看反复出现的词，</p><p>再找到相关的梦。</p><small>选择一个词，回到包含它的梦境。</small></div>
+      <div class="words-screen"><img src="../media/词云静帧.png" alt="梦潮词云界面" /></div>
+      <div class="word-echo">「飞行」<br />相关梦境 1 条</div>
+      <canvas class="words-network" aria-hidden="true"></canvas>
+      <span class="words-side-note">词云 · 相关梦境</span>
+      <footer class="footer"><span>梦境手札</span><span>向下滑动 ↓</span></footer>
+    </div>
+  </section>
+  <script>
+    // Direction study only: each glyph is assembled from adjoining translucent
+    // foam chambers. The production site does not import this prototype.
+    const bubbleTitle = document.querySelector('.home-title canvas');
+    const drawTitle = () => {
+      const width = bubbleTitle.clientWidth;
+      if (!width) return;
+      const ratio = Math.min(window.devicePixelRatio || 1, 2);
+      const height = width / 2;
+      bubbleTitle.width = Math.round(width * ratio);
+      bubbleTitle.height = Math.round(height * ratio);
+      const ctx = bubbleTitle.getContext('2d');
+      const mask = document.createElement('canvas');
+      mask.width = bubbleTitle.width; mask.height = bubbleTitle.height;
+      const maskCtx = mask.getContext('2d');
+      const w = mask.width, h = mask.height;
+      const firstSize = w * .32, secondSize = w * .155;
+      for (const target of [maskCtx, ctx]) {
+        target.textAlign = 'center'; target.textBaseline = 'middle';
+        target.font = `600 ${firstSize}px "Noto Serif SC", "Songti SC", serif`;
+        target.fillStyle = target === ctx ? 'rgba(12,75,99,.73)' : '#fff';
+        target.fillText('梦潮', w / 2, h * .29);
+        target.font = `500 ${secondSize}px Georgia, "Times New Roman", serif`;
+        target.fillStyle = target === ctx ? 'rgba(12,69,94,.88)' : '#fff';
+        target.fillText('DreamTide', w / 2, h * .755);
+      }
+      const alpha = maskCtx.getImageData(0,0,w,h).data;
+      let seed = 49187;
+      const random = () => ((seed = (Math.imul(seed,1664525)+1013904223) >>> 0) / 4294967296);
+      const step = Math.max(4, w / 82);
+      for (let y = step / 2; y < h; y += step * .92) {
+        for (let x = step / 2; x < w; x += step * .92) {
+          const px = Math.floor(x + (random() - .5) * step * .8);
+          const py = Math.floor(y + (random() - .5) * step * .8);
+          if (px < 0 || py < 0 || px >= w || py >= h || alpha[(py*w+px)*4+3] < 100) continue;
+          const radius = step * (.63 + random() * .92);
+          const colour = ['rgba(21,112,139,.89)','rgba(76,169,168,.84)',
+            'rgba(48,105,159,.87)','rgba(139,216,204,.86)'][Math.floor(random()*4)];
+          const film = ctx.createRadialGradient(px-radius*.35,py-radius*.43,radius*.07,px,py,radius);
+          film.addColorStop(0,'rgba(244,255,250,.95)');
+          film.addColorStop(.55,colour);
+          film.addColorStop(1,'rgba(8,67,91,.91)');
+          ctx.beginPath(); ctx.ellipse(px,py,radius,radius*(.82+random()*.36),
+            random()*.7,0,Math.PI*2);
+          ctx.fillStyle=film;ctx.fill();
+          ctx.lineWidth=Math.max(.8,step*.11);
+          ctx.strokeStyle='rgba(252,255,246,.86)';ctx.stroke();
+        }
+      }
+      ctx.globalCompositeOperation='destination-in';
+      ctx.drawImage(mask,0,0);
+      ctx.globalCompositeOperation='source-over';
+    };
+    const drawWordsNetwork = () => {
+      const frame = document.querySelector('.study--words .study__frame');
+      const canvas = frame.querySelector('.words-network');
+      const foam = frame.querySelector('.foam--words').getBoundingClientRect();
+      const screen = frame.querySelector('.words-screen').getBoundingClientRect();
+      const echo = frame.querySelector('.word-echo').getBoundingClientRect();
+      const bounds = frame.getBoundingClientRect();
+      const scale = Math.min(.7, 460 / bounds.width);
+      canvas.width = Math.round(bounds.width * scale);
+      canvas.height = Math.round(bounds.height * scale);
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width, h = canvas.height;
+      const outer = new Path2D('M .07 .34 C -.06 .2 .09 .02 .28 .15 C .4 -.04 .65 -.02 .71 .16 C .93 .06 1.06 .29 .91 .47 C 1.08 .76 .85 .98 .68 .83 C .46 1.03 .22 .9 .26 .75 C .02 .82 -.06 .55 .07 .34 Z');
+      let seed = 24687;
+      const random = () => ((seed = (Math.imul(seed,1664525)+1013904223) >>> 0) / 4294967296);
+      const sites = [];
+      for (let attempt = 0; attempt < 420 && sites.length < 95; attempt++) {
+        const u = random(), v = random();
+        if (!ctx.isPointInPath(outer,u,v)) continue;
+        sites.push({x:(foam.left+u*foam.width-bounds.left)*scale,
+          y:(foam.top+v*foam.height-bounds.top)*scale,
+          size:Math.pow(8+random()*23,2)});
+      }
+      const labels = new Int16Array(w*h).fill(-1);
+      const inside = (x,y,box) => {
+        const cx=box.left+box.width/2, cy=box.top+box.height/2;
+        return Math.pow((x-cx)/(box.width*.49),2)+
+          Math.pow((y-cy)/(box.height*.49),2) < 1;
+      };
+      for (let row=0;row<h;row++) {
+        for (let col=0;col<w;col++) {
+          const x=bounds.left+(col+.5)/scale, y=bounds.top+(row+.5)/scale;
+          if (!ctx.isPointInPath(outer,(x-foam.left)/foam.width,
+            (y-foam.top)/foam.height)) continue;
+          let closest=0, distance=Infinity;
+          for (let index=0;index<sites.length;index++) {
+            const site=sites[index], dx=col-site.x, dy=row-site.y;
+            const score=dx*dx+dy*dy-site.size;
+            if (score<distance) { distance=score; closest=index; }
+          }
+          if (inside(x,y,screen)) closest=1000;
+          else if (inside(x,y,echo)) closest=1001;
+          labels[row*w+col]=closest;
+        }
+      }
+      const pixels=ctx.createImageData(w,h), data=pixels.data;
+      for (let row=1;row<h-1;row++) {
+        for (let col=1;col<w-1;col++) {
+          const at=row*w+col, label=labels[at];
+          if (label<0) continue;
+          const right=labels[at+1], below=labels[at+w];
+          if ((right<0 || right===label) && (below<0 || below===label)) continue;
+          const seam=label>=1000 || right>=1000 || below>=1000;
+          const fleck=((col*73856093)^(row*19349663))>>>0;
+          for (let dy=-1;dy<=1;dy++) for (let dx=-1;dx<=1;dx++) {
+            const shadow=((row+dy)*w+col+dx)*4;
+            data[shadow]=255;data[shadow+1]=252;data[shadow+2]=239;
+            data[shadow+3]=Math.max(data[shadow+3],seam?88:53);
+          }
+          const pixel=at*4;
+          data[pixel]=255;data[pixel+1]=252;data[pixel+2]=239;
+          data[pixel+3]=fleck%5===0 ? 246 : (seam ? 220 : 158);
+        }
+      }
+      ctx.putImageData(pixels,0,0);
+    };
+    const drawStudies = () => { drawTitle(); drawWordsNetwork(); };
+    document.fonts.ready.then(drawStudies);
+    window.addEventListener('resize',drawStudies);
+  </script>
+</body>
+</html>

@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>梦潮｜气泡质感小样</title>
+<style>
+  :root { --ink: #1f3b49; --ink-soft: #5a7180; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #e2e5e4; color: var(--ink); font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif; }
+  main { max-width: 1340px; margin: 0 auto; padding: 32px 20px 48px; }
+  h1 { font-family: "Noto Serif SC", "Songti SC", STSong, serif; font-weight: 600; font-size: 28px; margin: 0 0 6px; }
+  .lead { margin: 0 0 28px; color: var(--ink-soft); font-size: 15px; line-height: 1.7; }
+  .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; }
+  figure { margin: 0; }
+  canvas { display: block; width: 100%; aspect-ratio: 4 / 3; border-radius: 6px; background: #f4f5f2; }
+  figcaption { padding: 12px 2px 0; }
+  figcaption b { font-family: "Noto Serif SC", "Songti SC", STSong, serif; font-size: 19px; font-weight: 600; }
+  figcaption b span { color: var(--ink-soft); font-weight: 500; margin-right: 8px; }
+  figcaption p { margin: 6px 0 0; font-size: 14px; line-height: 1.7; color: var(--ink-soft); }
+  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>气泡质感小样</h1>
+  <p class="lead">先只比气泡本身的画法，不放截图和排版。每张贴近一张参考图，选出最像气泡的那种，再用到页面上。</p>
+  <div class="grid" id="grid"></div>
+</main>
+<script>
+(() => {
+  const W = 800, H = 600;
+  const items = [
+    { id: '1', name: '白色泡沫浮在彩色水上', ref: 'ref-20', text: '泡壁是白色的细密泡沫，泡里透出底下有水纹的彩色水面，交汇处泡沫堆得更厚。' },
+    { id: '2', name: '透明皂泡堆', ref: 'ref-22', text: '一团透明的皂泡挤在一起，泡里几乎无色，边缘略深，每个泡上有一点反光，像隆起的小圆顶。' },
+    { id: '3', name: '水彩里的圆形泡印', ref: 'ref-23', text: '颜料晕染里留下零散的圆形白色泡印，大小不一，颜料积在泡印边缘，数量很少。' },
+    { id: '4', name: '飘浮的肥皂泡', ref: 'ref-22 · ref-17', text: '几只独立的球形肥皂泡，泡膜有流转的彩虹色，带两处高光和一道窗形反光。' },
+  ];
+
+  function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  const hash = (x, y) => { let h = (x * 374761393 + y * 668265263) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967295; };
+  const vnoise = (x, y) => {
+    const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+    const a = hash(xi, yi), b = hash(xi + 1, yi), c = hash(xi, yi + 1), d = hash(xi + 1, yi + 1);
+    return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+  };
+  const fbm = (x, y) => vnoise(x, y) * .5 + vnoise(x * 2.1, y * 2.1) * .27 + vnoise(x * 4.3, y * 4.3) * .15 + vnoise(x * 8.7, y * 8.7) * .08;
+  const smooth = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  const lerp = (a, b, t) => a + (b - a) * t;
+
+  // Poisson-disk seeds with spatially varying spacing, inside a mask.
+  function seeds(rnd, spacing, mask, tries = 40000) {
+    const G = 24, cols = Math.ceil(W / G) + 1, rows = Math.ceil(H / G) + 1;
+    const grid = Array.from({ length: cols * rows }, () => []);
+    for (let n = 0; n < tries; n++) {
+      const x = rnd() * W, y = rnd() * H;
+      if (!mask(x, y)) continue;
+      const sp = spacing(x, y), gx = Math.floor(x / G), gy = Math.floor(y / G);
+      let ok = true;
+      const reach = Math.ceil(sp / G) + 1;
+      for (let j = -reach; j <= reach && ok; j++) for (let i = -reach; i <= reach && ok; i++) {
+        const cx = gx + i, cy = gy + j;
+        if (cx < 0 || cy < 0 || cx >= cols || cy >= rows) continue;
+        for (const o of grid[cy * cols + cx]) if (Math.hypot(o[0] - x, o[1] - y) < Math.min(sp, o[2])) { ok = false; break; }
+      }
+      if (ok) grid[gy * cols + gx].push([x, y, sp]);
+    }
+    return { grid, G, cols, rows };
+  }
+  function nearest3(S, x, y, reach = 3) {
+    const { grid, G, cols, rows } = S;
+    const gx = Math.floor(x / G), gy = Math.floor(y / G);
+    let d1 = 1e9, d2 = 1e9, d3 = 1e9, n1 = null;
+    for (let j = -reach; j <= reach; j++) for (let i = -reach; i <= reach; i++) {
+      const cx = gx + i, cy = gy + j;
+      if (cx < 0 || cy < 0 || cx >= cols || cy >= rows) continue;
+      for (const s of grid[cy * cols + cx]) {
+        const dd = (s[0] - x) ** 2 + (s[1] - y) ** 2;
+        if (dd < d1) { d3 = d2; d2 = d1; d1 = dd; n1 = s; } else if (dd < d2) { d3 = d2; d2 = dd; } else if (dd < d3) d3 = dd;
+      }
+    }
+    return [Math.sqrt(d1), Math.sqrt(d2), Math.sqrt(d3), n1];
+  }
+  const smin = (a, b, k) => -k * Math.log(Math.exp(-a / k) + Math.exp(-b / k));
+
+  // ---------- 1: white foam on coloured water (ref-20) ----------
+  function swatch1(img) {
+    const rnd = mulberry(3);
+    const raft = (x, y) => 1 - ((x - 420) / 330) ** 2 - ((y - 300) / 250) ** 2 + (fbm(x * .006, y * .006) - .5) * 1.2;
+    const S = seeds(rnd, (x, y) => 26 + Math.pow(fbm(x * .005 + 4, y * .005), 1.4) * 110, (x, y) => raft(x, y) > -.05);
+    const d = img.data;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      // Water: deep blue-teal with soft ripple rings.
+      const rip = Math.sin(Math.hypot(x - 380, y - 330) * .09 + fbm(x * .01, y * .01) * 6) * .5 + .5;
+      const deep = fbm(x * .003 + 2, y * .003);
+      let r = lerp(40, 70, deep) + rip * 14, g = lerp(110, 150, deep) + rip * 14, b = lerp(170, 196, deep) + rip * 12;
+      const m = raft(x, y);
+      if (m > -.15) {
+        const [d1, d2, d3] = nearest3(S, x, y);
+        let f = smin(d2 - d1, d3 - d1, 4);
+        const cell = Math.min(90, d2);
+        // White foam wall: thick at junctions, made of fine beads (bumpy brightness).
+        const beads = .6 + vnoise(x * .45, y * .45) * .55;
+        const wallW = 2.2 + cell * .05;
+        let foam = (1 - smooth(wallW * .5, wallW * 1.6, f + (beads - .8) * 2.5)) * smooth(-.15, .1, m);
+        // Thin film inside the cell: water shows through, a little brighter near the wall.
+        const film = Math.exp(-f / 7) * .25 * smooth(-.1, .1, m);
+        r = lerp(r, 236, film); g = lerp(g, 244, film); b = lerp(b, 246, film);
+        const shade = .82 + beads * .2;
+        r = lerp(r, 246 * shade, foam); g = lerp(g, 248 * shade, foam); b = lerp(b, 246 * shade, foam);
+        if (foam > .4 && hash(x, y) > .996) { r = g = b = 255; }
+      }
+      // The raft's own border: a looser band of foam fading into water.
+      const o = (y * W + x) * 4; d[o] = r; d[o + 1] = g; d[o + 2] = b; d[o + 3] = 255;
+    }
+  }
+
+  // ---------- 2: clear soap foam heap (ref-22) ----------
+  function swatch2(img) {
+    const rnd = mulberry(11);
+    const heap = (x, y) => 1 - ((x - 400) / 300) ** 2 - ((y - 310) / 230) ** 2 + (fbm(x * .007 + 5, y * .007) - .5) * .9;
+    const S = seeds(rnd, (x, y) => 22 + Math.pow(fbm(x * .006 + 1, y * .006 + 7), 1.3) * 95, (x, y) => heap(x, y) > 0);
+    const d = img.data;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      let r = 244, g = 245, b = 242;
+      const grain = (hash(x, y) - .5) * 5; r += grain; g += grain; b += grain;
+      const m = heap(x, y);
+      if (m > -.1) {
+        const [d1, d2, d3, n] = nearest3(S, x, y);
+        const f = smin(d2 - d1, d3 - d1, 4);
+        const R = Math.max(6, d2 / 2);
+        const inner = Math.min(1, f / R);               // 0 at wall, 1 at centre
+        const presence = smooth(-.1, .08, m);
+        // Faint aqua tint, deeper toward the wall: reads as a curved transparent dome.
+        const tint = (.1 + Math.pow(1 - inner, 2.4) * .4) * presence;
+        r = lerp(r, 120, tint); g = lerp(g, 186, tint); b = lerp(b, 190, tint);
+        // Bright thin wall line.
+        const wall = (1 - smooth(.6, 2, f)) * presence;
+        r = lerp(r, 252, wall * .9); g = lerp(g, 253, wall * .9); b = lerp(b, 252, wall * .9);
+        // Window highlight up-left of each dome, a small glint down-right.
+        if (n) {
+          const hx = n[0] - R * .38, hy = n[1] - R * .4;
+          const hl = Math.exp(-(((x - hx) ** 2) / (R * R * .02) + ((y - hy) ** 2) / (R * R * .012)));
+          const gx = n[0] + R * .42, gy = n[1] + R * .36;
+          const gl = Math.exp(-((x - gx) ** 2 + (y - gy) ** 2) / (R * R * .004));
+          const lit = Math.min(1, hl * .85 + gl * .6) * presence;
+          r = lerp(r, 255, lit); g = lerp(g, 255, lit); b = lerp(b, 255, lit);
+        }
+      }
+      const o = (y * W + x) * 4; d[o] = r; d[o + 1] = g; d[o + 2] = b; d[o + 3] = 255;
+    }
+  }
+
+  // ---------- 3: a few round bubble prints in a watercolour wash (ref-23) ----------
+  function swatch3(img) {
+    const rnd = mulberry(5);
+    const prints = [];
+    for (let i = 0; i < 26; i++) {
+      const big = i < 6;
+      prints.push([60 + rnd() * 680, 50 + rnd() * 500, big ? 28 + rnd() * 34 : 5 + Math.pow(rnd(), 1.5) * 16]);
+    }
+    const pink = [214, 104, 140], yellow = [228, 196, 92], green = [150, 176, 70];
+    const d = img.data;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      let r = 246, g = 243, b = 238;
+      const grain = (hash(x, y) - .5) * 6; r += grain; g += grain; b += grain;
+      const t = fbm(x * .004, y * .004);
+      const wet = fbm(x * .008 + 3, y * .008 + 6);
+      const col = t < .45 ? pink : t < .58 ? yellow : green;
+      let a = smooth(.3, .7, wet) * .5 * (.75 + vnoise(x * .3, y * .3) * .35);
+      // Bubble prints: paper-white inside, pigment dried darkest at the rim.
+      let hole = 0, rim = 0;
+      for (const [px, py, pr] of prints) {
+        const dd = Math.hypot(x - px, y - py) + (vnoise(x * .06, y * .06) - .5) * pr * .18;
+        hole = Math.max(hole, 1 - smooth(pr * .82, pr, dd));
+        rim = Math.max(rim, Math.exp(-Math.abs(dd - pr) / 2.2) * smooth(-.1, .2, wet));
+      }
+      a = a * (1 - hole * .92) + rim * .5;
+      r = lerp(r, col[0], a); g = lerp(g, col[1], a); b = lerp(b, col[2], a);
+      const o = (y * W + x) * 4; d[o] = r; d[o + 1] = g; d[o + 2] = b; d[o + 3] = 255;
+    }
+  }
+
+  // ---------- 4: a few floating soap bubbles ----------
+  function swatch4(ctx) {
+    const bg = ctx.createLinearGradient(0, 0, W, H);
+    bg.addColorStop(0, '#eef2f3'); bg.addColorStop(1, '#f3eef1');
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+    const bubbles = [[300, 260, 150], [560, 190, 78], [600, 420, 46], [180, 470, 30], [470, 500, 16], [690, 300, 12]];
+    for (const [x, y, r] of bubbles) {
+      // Transparent body: almost nothing inside, a faint darker ring at the edge.
+      const body = ctx.createRadialGradient(x, y, r * .55, x, y, r);
+      body.addColorStop(0, 'rgba(255,255,255,0)'); body.addColorStop(.86, 'rgba(160,180,200,.06)'); body.addColorStop(1, 'rgba(120,140,170,.22)');
+      ctx.fillStyle = body; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+      // Thin-film colour swirling around the rim.
+      const film = ctx.createConicGradient(x * .01, x, y);
+      [[0, 'rgba(236,150,190,.75)'], [.2, 'rgba(250,214,140,.6)'], [.42, 'rgba(140,210,190,.65)'], [.62, 'rgba(130,160,230,.7)'], [.82, 'rgba(200,150,230,.65)'], [1, 'rgba(236,150,190,.75)']]
+        .forEach(([t, c]) => film.addColorStop(t, c));
+      ctx.lineWidth = Math.max(1.2, r * .05); ctx.strokeStyle = film;
+      ctx.beginPath(); ctx.arc(x, y, r * .975, 0, Math.PI * 2); ctx.stroke();
+      ctx.save(); ctx.globalAlpha = .35; ctx.lineWidth = r * .16; ctx.filter = `blur(${Math.max(1, r * .04)}px)`;
+      ctx.beginPath(); ctx.arc(x, y, r * .9, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+      // Window reflection up-left and a small glint low-right.
+      ctx.save(); ctx.translate(x - r * .42, y - r * .44); ctx.rotate(-.6);
+      const win = ctx.createLinearGradient(0, -r * .14, 0, r * .14);
+      win.addColorStop(0, 'rgba(255,255,255,.95)'); win.addColorStop(1, 'rgba(255,255,255,.2)');
+      ctx.fillStyle = win; ctx.beginPath(); ctx.ellipse(0, 0, r * .24, r * .1, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+      ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.beginPath(); ctx.arc(x + r * .5, y + r * .48, Math.max(1.2, r * .05), 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  const grid = document.getElementById('grid');
+  items.forEach((it, i) => {
+    const fig = document.createElement('figure');
+    fig.innerHTML = `<canvas width="${W}" height="${H}"></canvas><figcaption><b><span>${it.id}</span>${it.name}</b><p>${it.text}（参考 ${it.ref}）</p></figcaption>`;
+    grid.appendChild(fig);
+    const ctx = fig.querySelector('canvas').getContext('2d');
+    setTimeout(() => {
+      if (it.id === '4') { swatch4(ctx); return; }
+      const img = ctx.createImageData(W, H);
+      [swatch1, swatch2, swatch3][i](img);
+      ctx.putImageData(img, 0, 0);
+    }, 50 + i * 40);
+  });
+})();
+</script>
+</body>
+</html>

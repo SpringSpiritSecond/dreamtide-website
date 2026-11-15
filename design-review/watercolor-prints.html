@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>梦潮｜水彩泡印</title>
+<style>
+  :root { --ink: #24343c; --ink-soft: #5b6b72; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #e6e4df; color: var(--ink); font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif; }
+  main { max-width: 1320px; margin: 0 auto; padding: 32px 20px 56px; }
+  h1 { font-family: "Noto Serif SC", "Songti SC", STSong, serif; font-weight: 600; font-size: 28px; margin: 0 0 6px; }
+  .lead { margin: 0 0 28px; color: var(--ink-soft); font-size: 15px; line-height: 1.7; max-width: 46em; }
+  figure { margin: 0 0 40px; }
+  .frame { position: relative; aspect-ratio: 16 / 10; overflow: hidden; border-radius: 4px; background: #f6f3ee; }
+  .frame canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .copy { position: absolute; left: 8.75%; top: 50%; transform: translateY(-50%); width: 31%; }
+  .copy h2 { margin: 0 0 .7em; font-family: "Noto Serif SC", "Songti SC", STSong, serif; font-weight: 600; font-size: clamp(22px, 3.4vw, 44px); letter-spacing: .06em; }
+  .copy p { margin: 0; font-size: clamp(11px, 1.2vw, 16px); line-height: 1.95; color: var(--ink-soft); }
+  .shot { position: absolute; border-radius: 3.2% / 1.5%; opacity: 0; transition: opacity .6s; }
+  .shot.on { opacity: 1; }
+  figcaption { padding: 14px 2px 0; }
+  figcaption b { font-family: "Noto Serif SC", "Songti SC", STSong, serif; font-size: 19px; font-weight: 600; }
+  figcaption p { margin: 6px 0 0; font-size: 14px; line-height: 1.7; color: var(--ink-soft); }
+</style>
+</head>
+<body>
+<main>
+  <h1>水彩泡印</h1>
+  <p class="lead">用左下那种画法排了两章。截图完整显示，不裁切、不加框；泡印零散地留在颜料里，大泡旁边带几颗小泡，不沿截图轮廓排。两章用不同的颜色，换章时颜料会慢慢从一组颜色化到另一组。纸和泡印不会移动，只有颜料在原地慢慢变浓、变淡，像还没干的水彩继续化开；把鼠标移进画面，身后会落下几个气泡。气泡落在湿颜料上，推开颜料留下泡印，过几秒再渗进纸里。</p>
+  <div id="list"></div>
+</main>
+<script>
+(() => {
+  const W = 1280, H = 800;
+  const chapters = [
+    { title: '刻梦', lines: ['醒来后，趁还记得，把梦写下来。', '可以选日期，先暂存，想好了再保存。'],
+      shot: '刻梦.jpg', sw: 1260, sh: 2668, seed: 7,
+      // Rose, apricot, straw, leaf green, lilac; deep crimson only in small pooled spots.
+      pal: [[214, 104, 138], [234, 150, 104], [226, 192, 92], [150, 176, 84], [176, 140, 196]], deep: [176, 46, 84],
+      note: '刻梦：玫瑰、杏、麦黄、叶绿、淡紫，少量深胭脂积在角落，接近 ref-23。' },
+    { title: '梦的层次', lines: ['保存之后，补上情绪、标签和梦里的人。', '也能写注记，把私密的片段藏起来。'],
+      shot: '编辑-隐.jpg', sw: 1260, sh: 2676, seed: 19,
+      // Teal, cornflower, sage, lavender, a little of the rose carried over from the last chapter; indigo pools.
+      pal: [[58, 150, 150], [92, 136, 210], [136, 182, 104], [150, 130, 200], [214, 132, 150]], deep: [44, 70, 140],
+      note: '梦的层次：青、矢车菊蓝、草绿、薰衣草，留一点上一章的玫瑰色，少量靛蓝积在角落。' },
+  ];
+
+  function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  const hash = (x, y) => { let h = (x * 374761393 + y * 668265263) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967295; };
+  const vnoise = (x, y) => {
+    const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+    const a = hash(xi, yi), b = hash(xi + 1, yi), c = hash(xi, yi + 1), d = hash(xi + 1, yi + 1);
+    return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+  };
+  const fbm = (x, y) => vnoise(x, y) * .5 + vnoise(x * 2.1, y * 2.1) * .27 + vnoise(x * 4.3, y * 4.3) * .15 + vnoise(x * 8.7, y * 8.7) * .08;
+  const smooth = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  const lerp = (a, b, t) => a + (b - a) * t;
+
+  // Layout in design pixels.
+  const copyBox = { x0: 90, x1: 520, y0: 250, y1: 550 };
+  function shotRect(c) { const h = 650, w = h * c.sw / c.sh; return { x: 880 - w / 2, y: (H - h) / 2, w, h }; }
+  // Distance outside a rounded rectangle (negative inside).
+  function sdRect(r, x, y, rad = 20) {
+    const cx = r.x + r.w / 2, cy = r.y + r.h / 2;
+    const qx = Math.abs(x - cx) - r.w / 2 + rad, qy = Math.abs(y - cy) - r.h / 2 + rad;
+    return Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - rad;
+  }
+
+  // A few prints: some large, a couple of mid ones, small ones gathered loosely beside the large ones.
+  function placePrints(rnd, sr) {
+    const P = [];
+    const free = (x, y, r) => {
+      if (x - r < 10 || x + r > W - 10 || y - r < 10 || y + r > H - 10) return false;
+      if (x + r > copyBox.x0 - 20 && x - r < copyBox.x1 + 20 && y + r > copyBox.y0 - 30 && y - r < copyBox.y1 + 30) return false;
+      if (sdRect(sr, x, y) < r + 26) return false;
+      for (const p of P) if (Math.hypot(p.x - x, p.y - y) < p.r + r + 8) return false;
+      return true;
+    };
+    const add = (x, y, r) => {
+      P.push({ x, y, r, sx: .82 + rnd() * .36, rot: rnd() * Math.PI, wob: rnd() * 50, ghost: false });
+    };
+    let n = 0;
+    while (P.length < 4 && n++ < 4000) { const r = 34 + rnd() * 36, x = rnd() * W, y = rnd() * H; if (free(x, y, r)) add(x, y, r); }
+    const bigs = P.slice();
+    for (const b of bigs) {
+      // 2–4 small companions on one side of each large print.
+      const side = rnd() * Math.PI * 2, k = 2 + Math.floor(rnd() * 3);
+      for (let i = 0, t = 0; i < k && t < 200; t++) {
+        const a = side + (rnd() - .5) * 1.6, r = 5 + Math.pow(rnd(), 1.6) * 13, d = b.r + r + 10 + rnd() * 46;
+        const x = b.x + Math.cos(a) * d, y = b.y + Math.sin(a) * d;
+        if (free(x, y, r)) { add(x, y, r); i++; }
+      }
+    }
+    n = 0;
+    let mids = 0;
+    while (mids < 4 && n++ < 4000) { const r = 15 + rnd() * 14, x = rnd() * W, y = rnd() * H; if (free(x, y, r)) { add(x, y, r); mids++; } }
+    // Ghost prints: big, pale and soft-edged, where a bubble dissolved before the paint dried.
+    n = 0;
+    let ghosts = 0;
+    while (ghosts < 4 && n++ < 4000) {
+      const r = 50 + rnd() * 50, x = rnd() * W, y = rnd() * H;
+      if (x > copyBox.x0 - 40 && x < copyBox.x1 && y > copyBox.y0 - 40 && y < copyBox.y1 + 40) continue;
+      if (sdRect(sr, x, y) < 10) continue;
+      P.push({ x, y, r, sx: .85 + rnd() * .3, rot: rnd() * Math.PI, wob: rnd() * 50, ghost: true }); ghosts++;
+    }
+    return P;
+  }
+
+  function paint(c, img) {
+    const rnd = mulberry(c.seed), sr = shotRect(c), P = placePrints(rnd, sr), d = img.data;
+    const off = c.seed * 3.1;
+    // Gold flecks: a handful of tiny specks in two loose clusters.
+    const flecks = [];
+    for (let k = 0; k < 0; k++) {
+      let cx, cy, t = 0;
+      do { cx = 600 + rnd() * 660; cy = 40 + rnd() * 720; } while (sdRect(sr, cx, cy) < 20 && t++ < 50);
+      for (let i = 0; i < 9; i++) flecks.push([cx + (rnd() - .5) * 120, cy + (rnd() - .5) * 90, .8 + rnd() * 1.6]);
+    }
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      let r = 247, g = 244, b = 238;
+      const grain = (hash(x, y) - .5) * 6 + (vnoise(x * .5, y * .5) - .5) * 4; r += grain; g += grain; b += grain;
+
+      // How much paint lands here: patchy wash, lighter behind the copy, thinning toward the screenshot.
+      const wet = fbm(x * .0036 + off, y * .0036 + 1.7);
+      let amount = smooth(.36, .66, wet);
+      const inCopy = smooth(-60, 40, Math.min(x - copyBox.x0, copyBox.x1 - x, y - copyBox.y0 + 40, copyBox.y1 + 40 - y));
+      amount *= 1 - inCopy * .78;
+      const sd = sdRect(sr, x, y) + (fbm(x * .012 + 4, y * .012) - .5) * 70;
+      amount *= .25 + .75 * smooth(0, 90, sd);
+      // Edges of a wet area dry darker (watercolour tide line).
+      const tide = Math.exp(-Math.abs(wet - .5) / .018) * .16 * smooth(.2, .6, amount + .3);
+
+      // Three pigments flow into each other: weights from separate noise fields, no hard boundaries.
+      const n = c.pal.length, col = [0, 0, 0];
+      let ws = 0;
+      for (let k = 0; k < n; k++) {
+        // Weight 0 (the chapter's lead colour) a little higher so each chapter keeps its character.
+        const w = Math.pow(fbm(x * .0042 + 11 + k * 17.3 + off, y * .0042 + k * 7.1), 4) * (k === 0 ? 1.5 : 1);
+        ws += w; for (let i = 0; i < 3; i++) col[i] += c.pal[k][i] * w;
+      }
+      for (let i = 0; i < 3; i++) col[i] /= ws;
+      // Deep pigment pools in a few small patches, inside wet areas.
+      const pool = smooth(.68, .8, fbm(x * .006 + 61 + off, y * .006 + 3)) * smooth(.3, .7, amount);
+      for (let i = 0; i < 3; i++) col[i] = lerp(col[i], c.deep[i], pool * .75);
+
+      let a = amount * .56 + tide + pool * .18;
+      // Pigment granulation.
+      a *= .8 + vnoise(x * .18, y * .18) * .28 + (hash(x * 3 + 1, y * 5) - .5) * .08;
+
+      for (const p of P) {
+        const dx = x - p.x, dy = y - p.y;
+        if (Math.abs(dx) > p.r * 1.6 + 20 || Math.abs(dy) > p.r * 1.6 + 20) continue;
+        const cr = Math.cos(p.rot), sn = Math.sin(p.rot);
+        const u = (dx * cr + dy * sn) / p.sx, v = (-dx * sn + dy * cr) * p.sx;
+        const ang = Math.atan2(v, u);
+        // Ragged, slightly lumpy outline.
+        const edge = p.r * (1 + (vnoise(Math.cos(ang) * 1.8 + p.wob, Math.sin(ang) * 1.8 + p.wob) - .5) * .22)
+          + (vnoise(x * .25, y * .25) - .5) * Math.min(3, p.r * .12);
+        const dd = Math.hypot(u, v) - edge;
+        if (p.ghost) {
+          // Pale, soft circle: the paint inside is thinner, the rim barely there.
+          a *= 1 - (1 - smooth(-p.r * .35, 4, dd)) * .55;
+          a += Math.exp(-Math.abs(dd) / 5) * .05 * amount;
+          continue;
+        }
+        if (dd < 0) {
+          // Inside: paper shows through, with a few stray grains of pigment.
+          const clear = smooth(0, -3.5, dd);
+          a = a * (1 - clear * .93) + (hash(x, y * 3) > .992 ? .25 : 0) * clear;
+        } else {
+          // Outside: paint gathered at the bubble's edge, fading out over a few pixels.
+          a += Math.exp(-dd / (1.6 + p.r * .03)) * (.32 + amount * .25) * (.7 + vnoise(x * .4, y * .4) * .5);
+        }
+      }
+      a = Math.min(.82, a);
+      r = lerp(r, col[0], a); g = lerp(g, col[1], a); b = lerp(b, col[2], a);
+      // Where the wash is heavy, the pigment darkens slightly instead of only saturating.
+      const deep = Math.max(0, a - .45) * .35; r *= 1 - deep; g *= 1 - deep; b *= 1 - deep;
+
+      for (const [fx, fy, fr] of flecks) {
+        const q = Math.hypot(x - fx, y - fy);
+        if (q < fr + 1) { const k = (1 - smooth(fr - .6, fr + .8, q)) * .7; r = lerp(r, 196, k); g = lerp(g, 150, k); b = lerp(b, 70, k); }
+      }
+      const o = (y * W + x) * 4; d[o] = r; d[o + 1] = g; d[o + 2] = b; d[o + 3] = 255;
+    }
+  }
+
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const MAXB = 6;
+  // A bubble lands on the wet paint, pushes it aside and leaves a print, like the ones already dried in the painting.
+
+  // Everything is drawn from the painting itself, so cursor bubbles share its pigment, grain and paper.
+  const VS = 'attribute vec2 a; varying vec2 uv; void main(){ uv = vec2(a.x * .5 + .5, .5 - a.y * .5); gl_Position = vec4(a, 0., 1.); }';
+  const FS = `precision mediump float;
+    uniform sampler2D T; uniform float t;
+    uniform vec4 B[${MAXB}]; uniform vec3 P; uniform vec3 Q;
+    varying vec2 uv;
+    float h(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+    float n(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
+      return mix(mix(h(i), h(i + vec2(1., 0.)), f.x), mix(h(i + vec2(0., 1.)), h(i + 1.), f.x), f.y); }
+    void main(){
+      vec2 S = vec2(${W}., ${H}.), px = uv * S;
+      // The paper never moves. Only pigment density changes in place, the way wet colour keeps spreading.
+      vec2 sp = px;
+
+      float clearAmt = 0., ring = 0.;
+      for (int i = 0; i < ${MAXB}; i++) {
+        vec4 b = B[i];
+        if (b.w <= 0.) continue;
+        vec2 d = px - b.xy; float L = length(d);
+        if (L > b.z * 1.6 + 12.) continue;
+        {
+          // Print: lumpy outline, paper cleared inside, pigment pushed out to a grainy rim.
+          float ang = atan(d.y, d.x);
+          float R = b.z * (1. + (n(vec2(cos(ang), sin(ang)) * 1.6 + float(i) * 7.3) - .5) * .2) + (n(px * .25) - .5) * 2.;
+          clearAmt = max(clearAmt, (1. - smoothstep(R - 4., R, L)) * b.w);
+          float rim = L < R ? exp(-(R - L) / 1.2) : exp(-(L - R) / (1.8 + b.z * .035));
+          ring = max(ring, rim * (.7 + n(px * .4) * .5) * b.w);
+        }
+      }
+      vec3 col = texture2D(T, clamp(sp / S, 0., 1.)).rgb;
+      // Slowly evolving clouds of extra pigment: two noise fields cross-fade, so shapes grow and dissolve
+      // instead of sliding. They deepen paint that is already there and barely touch bare paper.
+      vec2 q = px * .0032;
+      float k1 = .5 + .5 * sin(t * .23), k2 = .5 + .5 * sin(t * .17 + 2.);
+      float c1 = mix(n(q + vec2(3.1, 7.7)) * .65 + n(q * 2.3 + 1.7) * .35, n(q + vec2(9.4, 2.2)) * .65 + n(q * 2.3 + 8.1) * .35, k1);
+      float c2 = mix(n(q * 1.3 + vec2(5.5, 1.1)) * .65 + n(q * 2.9 + 4.4) * .35, n(q * 1.3 + vec2(12.3, 6.6)) * .65 + n(q * 2.9 + 11.) * .35, k2);
+      float lum = dot(col, vec3(.333));
+      float wet = smoothstep(.955, .8, lum) * .85 + .15;
+      vec3 glaze = mix(vec3(1.), mix(P, Q, smoothstep(.3, .7, c2)), .55);
+      col *= mix(vec3(1.), glaze, smoothstep(.48, .78, c1) * .3 * wet);
+      // Where the colour thins out the paint seems to lift, a little lighter.
+      col = mix(col, vec3(.968, .957, .933), smoothstep(.5, .2, c1) * .1 * wet);
+      col = mix(col, vec3(.968, .957, .933), clearAmt * .86);
+      vec3 pig = mix(col * col, P * .92, .5);
+      col = mix(col, pig, min(1., ring) * .75);
+      gl_FragColor = vec4(col, 1.);
+    }`;
+  function makeWash(gl, source, lead) {
+    const sh = (type, src) => { const o = gl.createShader(type); gl.shaderSource(o, src); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(o)); return o; };
+    const pr = gl.createProgram();
+    gl.attachShader(pr, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(pr); gl.useProgram(pr);
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(pr, 'a'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
+    const u = {};
+    for (const k of ['t', 'B', 'P', 'Q']) u[k] = gl.getUniformLocation(pr, k);
+    gl.uniform3f(u.P, lead[0][0] / 255, lead[0][1] / 255, lead[0][2] / 255);
+    gl.uniform3f(u.Q, lead[1][0] / 255, lead[1][1] / 255, lead[1][2] / 255);
+    return (t, buf) => {
+      gl.uniform1f(u.t, t);
+      gl.uniform4fv(u.B, buf);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    };
+  }
+
+  const list = document.getElementById('list');
+  const scenes = [];
+
+  chapters.forEach((c, i) => {
+    const sr = shotRect(c);
+    const fig = document.createElement('figure');
+    fig.innerHTML = `<div class="frame"><canvas class="src" width="${W}" height="${H}"></canvas><canvas class="wash" width="${W}" height="${H}"></canvas>
+      <div class="copy"><h2>${c.title}</h2><p>${c.lines.join('<br>')}</p></div>
+      <img class="shot" alt="${c.title}截图" src="/dreamtide-website/media/${c.shot}"
+        style="left:${sr.x / W * 100}%;top:${sr.y / H * 100}%;width:${sr.w / W * 100}%;height:${sr.h / H * 100}%"></div>
+      <figcaption><b>${c.title}</b><p>${c.note}</p></figcaption>`;
+    list.appendChild(fig);
+    const frame = fig.querySelector('.frame'), shot = fig.querySelector('.shot');
+    shot.onload = () => shot.classList.add('on');
+    const src = fig.querySelector('.src'), ctx = src.getContext('2d');
+    const sc = { c, frame, draw: null, visible: true, bubbles: [], buf: new Float32Array(MAXB * 4),
+      mouse: { x: -999, y: -999, on: 0, target: 0, vx: 0, vy: 0, travel: 0 } };
+    scenes.push(sc);
+    setTimeout(() => {
+      const img = ctx.createImageData(W, H); paint(c, img); ctx.putImageData(img, 0, 0);
+      const gl = fig.querySelector('.wash').getContext('webgl');
+      if (gl) { sc.draw = makeWash(gl, src, c.pal); src.style.visibility = 'hidden'; sc.draw(0, sc.buf); }
+    }, 40 + i * 60);
+
+    const toDesign = (e) => { const b = frame.getBoundingClientRect(); return [(e.clientX - b.left) / b.width * W, (e.clientY - b.top) / b.height * H]; };
+    frame.addEventListener('pointerenter', (e) => { const [x, y] = toDesign(e); Object.assign(sc.mouse, { x, y, target: 1 }); });
+    frame.addEventListener('pointerleave', () => { sc.mouse.target = 0; });
+    frame.addEventListener('pointermove', (e) => {
+      const m = sc.mouse, [x, y] = toDesign(e), dx = x - m.x, dy = y - m.y;
+      m.x = x; m.y = y; m.target = 1;
+      if (reduce) return;
+      // A bubble now and then along the path, never a stream.
+      m.travel += Math.hypot(dx, dy);
+      if (m.travel > 110 + Math.random() * 80 && sc.bubbles.length < MAXB) {
+        m.travel = 0;
+        const size = Math.random() < .3 ? 46 + Math.random() * 22 : 16 + Math.random() * 20;
+        sc.bubbles.push({ x: x + (Math.random() - .5) * 70, y: y + (Math.random() - .5) * 70,
+          vx: dx * .01 + (Math.random() - .5) * 6, vy: (Math.random() - .5) * 4,
+          size, r: 0, a: 0, age: 0, life: 3.5 + Math.random() * 2 });
+      }
+    });
+    new IntersectionObserver(([en]) => { sc.visible = en.isIntersecting; }).observe(frame);
+  });
+
+  const ease = (k) => 1 - Math.pow(1 - Math.min(1, Math.max(0, k)), 3);
+  const t0 = performance.now();
+  let last = t0;
+  function tick(now) {
+    const t = (now - t0) / 1000, dt = Math.min(.05, (now - last) / 1000);
+    last = now;
+    for (const sc of scenes) {
+      if (!sc.visible) continue;
+      const f = dt * 60;
+      sc.bubbles = sc.bubbles.filter((b) => {
+        b.age += dt;
+        const k = b.age / b.life;
+        {
+          // A print spreads quickly, sits, then soaks into the paper and fades.
+          b.x += b.vx * dt; b.y += b.vy * dt; b.vx *= Math.pow(.97, f); b.vy *= Math.pow(.97, f);
+          b.r = b.size * ease(b.age / .6) * (1 + k * .12);
+          b.a = k < .55 ? 1 : 1 - ease((k - .55) / .45);
+        }
+        return b.a > 0;
+      });
+      sc.buf.fill(0);
+      sc.bubbles.forEach((b, i) => { sc.buf.set([b.x, b.y, b.r, b.a], i * 4); });
+      if (sc.draw) sc.draw(reduce ? 0 : t, sc.buf);
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

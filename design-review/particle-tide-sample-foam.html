@@ -1,0 +1,928 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>梦潮｜泡沫潮水样本</title>
+<style>
+  :root {
+    --ground: #eef1f0;
+    --ink: #1f3b49;
+    --ink-soft: #5a7180;
+    --tone: #d27e92;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    font-size: 17px;
+    -webkit-font-smoothing: antialiased;
+    touch-action: none;
+  }
+  #walls { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
+  #drift { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+  .bar {
+    position: fixed; left: 0; right: 0; top: 0; z-index: 4;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 28px clamp(16px, 4.2vw, 60px); font-size: 15px; letter-spacing: .04em; pointer-events: none;
+  }
+  .bar b { font-weight: 500; }
+  .copy {
+    position: fixed; z-index: 4; left: clamp(16px, 4.2vw, 60px); top: 50%;
+    width: min(32vw, 440px); transform: translateY(-50%); pointer-events: none;
+  }
+  .copy > * { transition: opacity .45s ease, transform .7s cubic-bezier(.2, .7, .2, 1); }
+  .copy.is-out > * { opacity: 0; transform: translateY(14px); }
+  .copy h1, .copy h2 {
+    margin: 0 0 28px; font-weight: 600; line-height: 1.12;
+    font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", STSong, serif;
+    font-size: clamp(42px, 5vw, 72px); letter-spacing: .04em;
+  }
+  .copy p { margin: 0; font-size: clamp(16px, 1.3vw, 19px); line-height: 1.85; color: var(--ink-soft); max-width: 22em; }
+  .copy ul { margin: 0; padding: 0 0 0 1.1em; font-size: clamp(16px, 1.3vw, 19px); line-height: 1.85; color: var(--ink-soft); }
+  .copy ul li::marker { color: var(--tone); }
+
+  /* Bubbles: a clear lens with pigment pooling at the rim (ref-23), content seen through it (ref-03). */
+  .bubble {
+    position: fixed; left: 0; top: 0; z-index: 1; border-radius: 50%; overflow: hidden;
+    background: rgba(255, 255, 255, .42);
+    will-change: transform;
+  }
+  .bubble.is-hidden { visibility: hidden; }
+  .bubble.is-main { cursor: zoom-in; z-index: 2; background: #f8faf9; }
+  .content .label { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; gap: 4px; }
+  .content .label b { font-family: "Noto Serif SC", "Songti SC", STSong, serif; font-weight: 500; font-size: var(--label, 26px); color: var(--ink); letter-spacing: .12em; }
+  .bubble.is-open { cursor: zoom-out; }
+  .content { position: absolute; inset: 0; transition: opacity .35s ease; }
+  .content.is-out { opacity: 0; }
+  #stage.is-open .bubble:not(.is-main) .content { opacity: 0; }
+  /* The screen has no card edge: its pale app background feathers out into the clear opening. */
+  .content img.screen {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 7%, #000 93%, transparent 100%), linear-gradient(to right, transparent 0, #000 9%, #000 91%, transparent 100%);
+    -webkit-mask-composite: source-in;
+    mask-image: linear-gradient(to bottom, transparent 0, #000 7%, #000 93%, transparent 100%), linear-gradient(to right, transparent 0, #000 9%, #000 91%, transparent 100%);
+    mask-composite: intersect;
+  }
+  /* Detail images become round slices (ref-03): the key part fills the cell and fades at the wall. */
+  .content img.detail {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+    -webkit-mask-image: radial-gradient(circle, #000 52%, transparent 70%);
+    mask-image: radial-gradient(circle, #000 52%, transparent 70%);
+  }
+  .content .slice {
+    position: absolute; inset: -6%; padding: 4%;
+    font-family: "Noto Serif SC", "Songti SC", STSong, serif; font-size: 12px; line-height: 1.55;
+    color: rgba(31, 70, 86, .38); text-align: justify; word-break: break-all;
+  }
+  .content .slice em { font-style: normal; color: var(--rose); }
+  .content .word {
+    position: absolute; inset: 0; display: grid; place-content: center; text-align: center;
+    font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", STSong, serif;
+  }
+  .content .word b { font-weight: 600; font-size: var(--word, 120px); letter-spacing: .08em; line-height: 1.05; color: var(--ink); }
+  .content .cta {
+    position: absolute; inset: 0; display: grid; place-content: center; gap: 8px; text-align: center;
+    color: var(--ink); text-decoration: none; font-family: "Noto Serif SC", "Songti SC", STSong, serif; font-size: clamp(19px, 1.7vw, 24px); letter-spacing: .1em;
+  }
+  .content .cta span { font-family: "Noto Sans SC", "PingFang SC", sans-serif; font-size: 14px; letter-spacing: .02em; color: var(--ink-soft); }
+  .content .cta:focus-visible { outline: 2px solid var(--ink); outline-offset: -12px; border-radius: 50%; }
+
+  .dots { position: fixed; z-index: 4; left: 50%; bottom: 30px; transform: translateX(-50%); display: flex; gap: 14px; }
+  .dots button { width: 9px; height: 9px; padding: 0; border-radius: 50%; border: 1px solid var(--ink-soft); background: transparent; cursor: pointer; transition: background .4s, border-color .4s, transform .4s; }
+  .dots button[aria-current="true"] { background: var(--tone); border-color: var(--tone); transform: scale(1.35); }
+  .dots button:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+  .hint { position: fixed; z-index: 4; right: clamp(16px, 4.2vw, 60px); bottom: 26px; font-size: 14px; color: var(--ink-soft); pointer-events: none; transition: opacity .5s; }
+
+  @media (max-width: 760px) {
+    .bar { padding: 18px 16px; font-size: 14px; }
+    .copy { top: 62px; transform: none; width: auto; right: 16px; }
+    .copy h1, .copy h2 { font-size: 36px; margin-bottom: 12px; }
+    .copy p { font-size: 15px; line-height: 1.6; }
+    .copy ul { font-size: 15px; line-height: 1.7; }
+    .dots { bottom: 18px; }
+    .hint { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="bar"><b>梦潮</b><span id="count" hidden></span></div>
+<section class="copy" id="copy" aria-live="polite"></section>
+<div id="stage"></div>
+<canvas id="drift" aria-hidden="true"></canvas>
+<canvas id="walls" aria-hidden="true"></canvas>
+<nav class="dots" id="dots" aria-label="章节"></nav>
+<div class="hint" id="hint"></div>
+
+<script>
+(() => {
+  const media = (name) => `/dreamtide-website/media/${name}`;
+  // Sample dream text for the sliced-text bubbles (ref-03). Placeholder copy, not user data.
+  const dream = '『阿岚』在黑色<em>码头</em>等我，船底像被刀刮开，水面下面有一座发红的城市。我沿着旧楼的楼梯一直往下走，窗外是蓝夜，有人在很高的地方喊我的名字。醒来时手心还是潮的。春梦了无痕，只记得飞行时风从耳边过去，童年的院子里落满了雨。';
+  const slice = (offset) => `<div class="slice">${(dream.slice(offset) + dream + dream + dream).slice(0, 420)}</div>`;
+
+  // Each chapter is a small linked cluster: one main bubble holding the screen, a few satellites
+  // that touch it and share its wall. Angles in degrees; r is a fraction of the visual box.
+  // Each chapter: one cell holding the screen, at most two keyword cells, one or two empty cells.
+  // tone is the chapter's single pigment; the foam carries it in on the tide.
+  const states = [
+    { title: '梦醒以后，<br>仍有迹可循', lines: ['梦潮是一款记录与回看梦境的 Android 应用。', '写下、整理、回看，都只存在你的手机里。'],
+      tone: [210, 126, 146], pal: [[210, 126, 146], [228, 164, 132], [168, 146, 198]], main: { r: .36, content: { word: '梦潮' } },
+      sats: [
+        { id: 1, angle: -140, r: .13 },
+        { id: 2, angle: 38, r: .16 },
+        { id: 3, parent: 2, angle: 70, r: .07 },
+      ] },
+    { title: '刻梦', lines: ['醒来后，趁还记得，把梦写下来。', '可以选日期，先暂存，想好了再保存。'],
+      detail: ['写下梦境正文。', '选择梦发生的日期。', '先暂存草稿，或直接保存为正式记录。'],
+      tone: [210, 126, 146], pal: [[210, 126, 146], [230, 158, 120], [222, 186, 110]], main: { r: .46, content: { screen: '刻梦.jpg', w: 1260, h: 2668 } },
+      sats: [
+        { id: 1, angle: 16, r: .15, content: { label: '日期' } },
+        { id: 2, angle: 150, r: .07 },
+      ] },
+    { title: '梦的层次', lines: ['保存之后，补上情绪、标签和梦里的人。', '也能写注记，把私密的片段藏起来。'],
+      detail: ['为梦补上标签、人物与情绪。', '重读时继续写下注记。', '私密片段由你决定是否显示。'],
+      tone: [78, 158, 149], pal: [[78, 158, 149], [98, 168, 198], [152, 186, 126]], main: { r: .46, content: { screen: '编辑-隐.jpg', w: 1260, h: 2676 } },
+      sats: [
+        { id: 1, angle: -22, r: .14, content: { label: '标签' } },
+        { id: 2, angle: 30, r: .14, content: { label: '隐私' } },
+        { id: 3, angle: 196, r: .06 },
+      ] },
+    { title: '循迹', lines: ['按日期翻回去看保存过的梦。', '用一个词、一个标签或一个人去找。'],
+      detail: ['按日期与词语查找。', '用标签、人物缩小范围。', '点开一场梦继续阅读。'],
+      tone: [95, 130, 184], pal: [[95, 130, 184], [150, 134, 200], [84, 160, 172]], main: { r: .46, content: { screen: '档案.jpg', w: 1260, h: 2648 } },
+      sats: [
+        { id: 1, angle: 20, r: .15, content: { label: '筛选' } },
+        { id: 2, angle: 160, r: .07 },
+      ] },
+    { title: '带走一场梦', lines: ['把一场梦生成长图，先看完整预览。', '满意了再保存到相册，或发给别人。'],
+      detail: ['先生成并预览完整梦境长图。', '可以保存图片到设备。', '也可以打开系统分享面板发送。'],
+      tone: [201, 154, 76], pal: [[201, 154, 76], [224, 146, 116], [212, 124, 146]], main: { r: .46, content: { screen: '分享.png', w: 1080, h: 848 } },
+      sats: [
+        { id: 1, angle: -60, r: .1 },
+        { id: 2, angle: 170, r: .07 },
+      ] },
+    { title: '下载梦潮', lines: ['目前只有 Android 版。', '安装包放在 GitHub Release，免费使用。'],
+      tone: [78, 158, 149], pal: [[78, 158, 149], [98, 140, 196], [210, 130, 150]], main: { r: .3, content: { cta: true } },
+      sats: [
+        { id: 1, angle: -150, r: .12 },
+        { id: 2, angle: 24, r: .08 },
+      ] },
+  ];
+  const washes = [[226, 120, 156], [240, 168, 112], [228, 196, 96], [104, 186, 170], [100, 156, 204], [176, 140, 210], [226, 120, 156]];
+  const MAX = 7;
+
+  const stage = document.getElementById('stage');
+  const canvas = document.getElementById('walls');
+  const ctx = canvas.getContext('2d');
+  const copy = document.getElementById('copy');
+  const dots = document.getElementById('dots');
+  const count = document.getElementById('count');
+  const hint = document.getElementById('hint');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+  let skew = 0;
+  const clock = () => performance.now() + skew;
+  let W = 0, H = 0, DPR = 1, mobile = false;
+  let current = 0, open = false, locked = false;
+  const pointer = { x: -9999, y: -9999 };
+  const SERIF = '"Noto Serif SC", "Source Han Serif SC", "Songti SC", STSong, serif';
+
+  // ---- Cells: a few large, calm openings (ref-20, ref-21). Identity persists across chapters. ----
+  const bubbles = Array.from({ length: MAX }, (_, i) => {
+    const el = document.createElement('div');
+    el.className = 'bubble is-hidden';
+    const c = washes[i % washes.length];
+    // Only a faint pigment soak just inside the wall; the opening itself stays clean (ref-23).
+    el.style.setProperty('--wash', `rgba(${c},.2)`);
+    el.style.setProperty('--wash-soft', `rgba(${c},.05)`);
+    const content = document.createElement('div');
+    content.className = 'content';
+    el.appendChild(content);
+    stage.appendChild(el);
+    return { el, content, x: 0, y: 0, r: 0, ax: 1, ay: 1, k: 1, tax: 1, tay: 1, tk: 1, vx: 0, vy: 0, tx: 0, ty: 0, tr: 0, start: 0, phase: rand(0, 6.28), key: '', text: null, pending: null, color: c };
+  });
+
+  function visualBox() {
+    if (mobile) {
+      const top = Math.min(H * .4, 290);
+      return { x: 16, y: top, w: W - 32, h: H - top - 50 };
+    }
+    const x = Math.max(W * .4, 450);
+    return { x, y: H * .1, w: W - x - W * .04, h: H * .8 };
+  }
+
+  // ---- Cell shape: a rounded pebble with elliptical corners. Circles are the k = 1, ax = ay = 1 case.
+  // The main cell is squeezed into a pebble that follows its screenshot, as large cells in real foam do (ref-20). ----
+  const dims = (c) => {
+    const hw = c.r * c.ax, hh = c.r * c.ay;
+    return { hw, hh, crx: hw * c.k, cry: hh * c.k };
+  };
+  function inside(c, x, y, pad = 0) {
+    const { hw, hh, crx, cry } = dims(c);
+    const dx = Math.abs(x - c.x), dy = Math.abs(y - c.y), w = hw - pad, h = hh - pad;
+    if (dx > w || dy > h) return false;
+    const ix = hw - crx, iy = hh - cry;
+    if (dx <= ix || dy <= iy) return true;
+    const ex = (dx - ix) / Math.max(1, crx - pad), ey = (dy - iy) / Math.max(1, cry - pad);
+    return ex * ex + ey * ey <= 1;
+  }
+  // Distance from the centre to the wall along a direction.
+  function reach(c, ux, uy) {
+    let lo = 0, hi = c.r * Math.max(c.ax, c.ay) * 1.05;
+    for (let i = 0; i < 14; i++) { const m = (lo + hi) / 2; if (inside(c, c.x + ux * m, c.y + uy * m)) lo = m; else hi = m; }
+    return lo;
+  }
+  // Point and outward normal at perimeter parameter t in [0, 1).
+  function contour(c, t) {
+    const { hw, hh, crx, cry } = dims(c);
+    const sx = hw - crx, sy = hh - cry;
+    const arc = Math.PI / 4 * (3 * (crx + cry) - Math.sqrt((3 * crx + cry) * (crx + 3 * cry)));
+    const segs = [2 * sx, arc, 2 * sy, arc, 2 * sx, arc, 2 * sy, arc];
+    const total = segs.reduce((a, b) => a + b, 0) || 1;
+    let d = ((t % 1) + 1) % 1 * total, i = 0;
+    while (i < 7 && d > segs[i]) { d -= segs[i]; i++; }
+    const u = segs[i] ? d / segs[i] : 0;
+    const corner = (cx, cy, a0) => {
+      const a = a0 + u * Math.PI / 2, ca = Math.cos(a), sa = Math.sin(a);
+      const nx = ca / Math.max(1, crx), ny = sa / Math.max(1, cry), nl = Math.hypot(nx, ny) || 1;
+      return [c.x + cx + ca * crx, c.y + cy + sa * cry, nx / nl, ny / nl];
+    };
+    switch (i) {
+      case 0: return [c.x - sx + u * 2 * sx, c.y - hh, 0, -1];
+      case 1: return corner(sx, -sy, -Math.PI / 2);
+      case 2: return [c.x + hw, c.y - sy + u * 2 * sy, 1, 0];
+      case 3: return corner(sx, sy, 0);
+      case 4: return [c.x + sx - u * 2 * sx, c.y + hh, 0, 1];
+      case 5: return corner(-sx, sy, Math.PI / 2);
+      case 6: return [c.x - hw, c.y + sy - u * 2 * sy, -1, 0];
+      default: return corner(-sx, -sy, Math.PI);
+    }
+  }
+  const shapeFor = (content) => {
+    if (!content || !content.screen) return { ax: 1, ay: 1, k: 1 };
+    return content.w < content.h ? { ax: .64, ay: 1, k: .78 } : { ax: 1, ay: .8, k: .72 };
+  };
+
+  // Satellites sit on their parent's wall, overlapping it so the two share one membrane.
+  function layout(index) {
+    const s = states[index];
+    const box = visualBox();
+    const unit = Math.min(box.w, box.h);
+    const targets = new Map();
+    const scale = open ? Math.min(1.75, (mobile ? H * .46 : H * .47) / (s.main.r * unit)) : 1;
+    const mr = s.main.r * unit * scale * (mobile && !open ? .9 : 1);
+    const mx = open && !mobile ? box.x + box.w * .45 : box.x + box.w * (mobile ? .5 : .46);
+    const my = open && mobile ? H * .55 : box.y + box.h * .5;
+    targets.set(0, { id: 0, x: mx, y: my, r: mr, ...shapeFor(s.main.content), content: s.main.content, main: true });
+    for (const sat of s.sats) {
+      const p = targets.get(sat.parent || 0);
+      const r = sat.r * unit * (open ? .55 : 1) * (mobile ? .78 : 1);
+      const a = sat.angle * Math.PI / 180;
+      const d = reach(p, Math.cos(a), Math.sin(a)) + r * .58;
+      const minX = mobile ? r + 6 : box.x - box.w * .05 + r, maxX = W - (mobile ? r + 6 : r + 18);
+      const minY = (mobile ? box.y - 10 : 70) + r * .6, maxY = H - (mobile ? 54 : 80) - r * .7;
+      targets.set(sat.id, {
+        id: sat.id, r, ax: 1, ay: 1, k: 1, content: sat.content, parent: sat.parent || 0,
+        x: clamp(p.x + Math.cos(a) * d, minX, Math.max(minX, maxX)),
+        y: clamp(p.y + Math.sin(a) * d, minY, Math.max(minY, maxY)),
+      });
+    }
+    return targets;
+  }
+
+  const contentKey = (c) => c ? JSON.stringify(c) : '';
+  const plainSlice = (offset) => (dream.replace(/<[^>]+>/g, '').slice(offset) + dream.replace(/<[^>]+>/g, '')).slice(0, 60);
+  function contentHTML(c, r) {
+    if (!c) return '';
+    if (c.word) return `<div class="word" style="--word:${Math.round(r * .5)}px"><b>${c.word}</b></div>`;
+    if (c.cta) return `<a class="cta" href="#download">下载 Android 版<span>从 GitHub Release 获取安装包</span></a>`;
+    if (c.text !== undefined) return slice(c.text);
+    if (c.image) return `<img class="detail" src="${media(c.image)}" alt="">`;
+    if (c.label) return `<div class="label" style="--label:${Math.round(clamp(r * .34, 15, 30))}px"><b>${c.label}</b></div>`;
+    if (c.screen) {
+      // The pebble is cut to the screenshot's proportion, so the whole screen fits uncropped.
+      const style = c.w < c.h ? 'height:86%;width:auto' : 'width:80%;height:auto';
+      return `<img class="screen" src="${media(c.screen)}" alt="" style="${style}">`;
+    }
+    return '';
+  }
+
+  // ---- Wall particles: fine foam that exists only along the walls (ref-20), pigment-coloured (ref-24),
+  // thicker where walls meet (ref-21). The openings stay empty, so the foam never fills an area. ----
+  let N = 0;
+  let foam = [];
+  let transitionStart = 0;
+
+  function makeGrain() {
+    // Mostly fine foam, some medium bubbles, a few large ones: a long-tailed size mix like real foam.
+    const base = 1 + Math.pow(Math.random(), 2.6) * 4.6;
+    const ring = base > 2.4;
+    return {
+      base, grow: 0, fade: false, hueJitter: rand(-.04, .04),
+      x: rand(0, W), y: rand(0, H), sx: 0, sy: 0, cx: 0, cy: 0,
+      cell: 0, t: 0, off: 0, delay: 0, dur: 1, phase: rand(0, 6.28),
+      size: base, ring, ox: 0, oy: 0, vx: 0, vy: 0,
+      color: 'rgba(0,0,0,0)', alpha: .8, flying: false,
+    };
+  }
+
+  function wallSlots(targets) {
+    const cells = [...targets.values()];
+    const area = (c) => c.r * c.r * c.ax * c.ay;
+    // Walk every wall; where it enters or leaves another cell is a junction (ref-21).
+    const walls = [];
+    const joins = [];
+    for (const c of cells) {
+      const { hw, hh } = dims(c);
+      const steps = Math.max(32, Math.round(Math.PI * (hw + hh) / 2.5));
+      let prev = null;
+      for (let k = 0; k <= steps; k++) {
+        const t = k / steps;
+        const [x, y] = contour(c, t);
+        const covered = cells.some((o) => o !== c && inside(o, x, y));
+        if (prev !== null && covered !== prev) joins.push({ x, y });
+        prev = covered;
+        // Where a smaller cell's wall runs inside a larger one, the larger wall is the shared membrane.
+        if (k < steps && !cells.some((o) => o !== c && area(o) > area(c) && inside(o, x, y, 3))) walls.push({ c, t, x, y });
+      }
+    }
+    const cands = [];
+    let total = 0;
+    for (const w of walls) {
+      let near = 1e9;
+      for (const j of joins) near = Math.min(near, Math.hypot(w.x - j.x, w.y - j.y));
+      const weight = 1 + 3.2 * Math.exp(-near / 16);
+      total += weight;
+      cands.push({ cell: w.c.id, t: w.t, acc: total, band: (mobile ? 2.6 : 3.4) + 10 * Math.exp(-near / 13), color: bubbles[w.c.id].color });
+    }
+    const slots = [];
+    for (let n = 0; n < N; n++) {
+      const pick = Math.random() * total;
+      let lo = 0, hi = cands.length - 1;
+      while (lo < hi) { const mid = (lo + hi) >> 1; if (cands[mid].acc < pick) lo = mid + 1; else hi = mid; }
+      const c = cands[lo];
+      const t = rand(-1, 1);
+      slots.push({ cell: c.cell, t: c.t + rand(-.002, .002), off: Math.sign(t) * Math.pow(Math.abs(t), 1.8) * c.band * .8, color: c.color, junction: c.band > 7 });
+    }
+    return slots;
+  }
+
+  function slotPosition(p) {
+    const [x, y, nx, ny] = contour(bubbles[p.cell], p.t);
+    return [x + nx * p.off, y + ny * p.off];
+  }
+
+  function assignFoam(targets, instant) {
+    const slots = wallSlots(targets);
+    const jitter = H * .25;
+    // Pair grains and slots by height so the tide moves as one body (ref-14).
+    const grains = foam.map((p) => ({ p, k: p.y + rand(-jitter, jitter) })).sort((a, b) => a.k - b.k);
+    const order = slots.map((s) => {
+      const t = targets.get(s.cell);
+      return { s, k: contour(t, s.t)[1] + rand(-jitter, jitter) };
+    }).sort((a, b) => a.k - b.k);
+    transitionStart = clock();
+    grains.forEach(({ p }, i) => {
+      const s = order[i].s;
+      p.sx = p.x; p.sy = p.y;
+      p.cell = s.cell; p.t = s.t; p.off = s.off;
+      // Pigments mix along a wall (ref-24): mostly the cell's own colour, drifting toward its neighbours.
+      // One pigment per chapter; grains differ only in depth, like a single-colour foam (ref-20).
+      const tone = states[current].tone;
+      const depth = Math.random();
+      const c = depth < .25 ? tone.map((v) => v * .72) : depth < .8 ? tone : tone.map((v) => v + (255 - v) * .45);
+      p.alpha = s.junction ? rand(.7, .95) : rand(.45, .85);
+      p.size = p.base * (s.junction ? 1.35 : 1);
+      // In the current some bubbles swell, some shrink to a speck, some thin out and vanish for a moment.
+      p.grow = Math.random() < .55 ? rand(.6, 2.6) : rand(-.85, -.3);
+      p.fade = Math.random() < .45;
+      p.color = `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`;
+      // The flow bends every path the same way: down and around, like a current curling (ref-14).
+      const t = targets.get(s.cell);
+      const [ex, ey] = contour(t, s.t);
+      const mx = (p.sx + ex) / 2, my = (p.sy + ey) / 2;
+      const swing = Math.min(W, H) * rand(.16, .34);
+      p.cx = mx - swing * .9; p.cy = my + swing;
+      p.delay = instant || reduce ? 0 : clamp((ex - visualBox().x) / visualBox().w, 0, 1) * 380 + rand(0, 360);
+      p.dur = instant || reduce ? 0 : rand(1100, 1600);
+      p.flying = !instant && !reduce;
+    });
+  }
+
+  // The membrane: pigment pooled along each wall, wide and soft with a darker settled edge.
+  // It dims while the tide is moving and settles back in once the walls have formed.
+  function membraneStrength(now) {
+    if (reduce) return 1;
+    const t = now - transitionStart;
+    if (t < 0) return 1;
+    return t < 260 ? 1 - t / 260 : clamp((t - 900) / 1100, 0, 1);
+  }
+  function drawMembranes(now) {
+    const k = membraneStrength(now);
+    if (k <= .01) return;
+    const live = bubbles.filter((b) => b.r > 4);
+    const area = (c) => c.r * c.r * c.ax * c.ay;
+    for (const c of live) {
+      const { hw, hh } = dims(c);
+      const steps = Math.max(48, Math.round((hw + hh) / 3));
+      const pts = [];
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        const [x, y] = contour(c, t);
+        const hidden = live.some((o) => o !== c && area(o) > area(c) && inside(o, x, y, 2));
+        pts.push({ x, y, t, hidden });
+      }
+      // Two passes: a wide soft wash and a fine pooled edge, each coloured along the wall.
+      for (const pass of [{ w: mobile ? 9 : 13, a: .16 }, { w: mobile ? 1.8 : 2.4, a: .5 }]) {
+        ctx.lineWidth = pass.w; ctx.lineCap = 'round';
+        for (let i = 0; i < pts.length - 1; i++) {
+          const a = pts[i], b = pts[i + 1];
+          if (a.hidden || b.hidden) continue;
+          const col = rampAt(a.t + cellHue(bubbles.indexOf(c)));
+          ctx.globalAlpha = pass.a * k;
+          ctx.strokeStyle = `rgb(${col[0]},${col[1]},${col[2]})`;
+          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+        }
+      }
+    }
+    // Where walls meet the pigment gathers into a soft node (ref-21).
+    for (let i = 0; i < live.length; i++) for (let j = i + 1; j < live.length; j++) {
+      const a = live[i], b = live[j];
+      const { hw, hh } = dims(a);
+      const steps = Math.max(48, Math.round((hw + hh) / 4));
+      let prev = null;
+      for (let s2 = 0; s2 <= steps; s2++) {
+        const [x, y] = contour(a, s2 / steps);
+        const now2 = inside(b, x, y);
+        if (prev !== null && now2 !== prev) {
+          const col = rampAt(s2 / steps + cellHue(bubbles.indexOf(a)));
+          const g = ctx.createRadialGradient(x, y, 0, x, y, mobile ? 12 : 18);
+          g.addColorStop(0, `rgba(${col[0]},${col[1]},${col[2]},${(.5 * k).toFixed(3)})`);
+          g.addColorStop(1, `rgba(${col[0]},${col[1]},${col[2]},0)`);
+          ctx.globalAlpha = 1; ctx.fillStyle = g;
+          ctx.beginPath(); ctx.arc(x, y, mobile ? 12 : 18, 0, Math.PI * 2); ctx.fill();
+        }
+        prev = now2;
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // ---- Falling characters: text in a cell breaks into glyphs that fall and ring the water (ref-15, ref-03). ----
+  const glyphs = [];
+  const ripples = [];
+  function shedTitle() {
+    const head = copy.querySelector('h1, h2');
+    if (!head || reduce) return;
+    const size = parseFloat(getComputedStyle(head).fontSize);
+    const walker = document.createTreeWalker(head, NodeFilter.SHOW_TEXT);
+    const range = document.createRange();
+    let node, order = 0;
+    while ((node = walker.nextNode())) {
+      for (let i = 0; i < node.length; i++) {
+        const ch = node.data[i];
+        if (!ch.trim()) continue;
+        range.setStart(node, i); range.setEnd(node, i + 1);
+        const r = range.getBoundingClientRect();
+        glyphs.push({
+          ch, x: r.left + r.width / 2, y: r.top + r.height / 2, vx: rand(-.4, .6), vy: rand(-1.2, -.2),
+          rot: 0, vr: rand(-.03, .03), size, shrink: rand(.35, .55), life: 1,
+          floor: H - (mobile ? 56 : 66) - rand(0, 14), delay: order++ * 55, born: clock(),
+        });
+      }
+    }
+    // The canvas glyphs take over from the DOM title, so it never shows twice.
+    head.style.visibility = 'hidden';
+  }
+  function shedText(b) {
+    if (!b.text || b.r < 8 || reduce) return;
+    const chars = [...plainSlice(b.text.offset)].filter((ch) => ch.trim());
+    const count = Math.min(chars.length, Math.round(b.r / 3) + 8);
+    for (let i = 0; i < count; i++) {
+      const a = rand(0, Math.PI * 2), d = Math.sqrt(Math.random()) * b.r * .8;
+      glyphs.push({
+        ch: chars[i % chars.length], x: b.x + Math.cos(a) * d, y: b.y + Math.sin(a) * d,
+        vx: rand(-.5, .5), vy: rand(-.6, .3), rot: 0, vr: rand(-.04, .04),
+        size: mobile ? 11 : rand(12, 15), life: 1, floor: H - (mobile ? 58 : 70) - rand(0, 18), delay: rand(0, 260),
+        born: clock(),
+      });
+    }
+  }
+
+  // ---- Palette: the rendered colours ease toward the chapter's palette over about two seconds. ----
+  let livePal = states[0].pal.map((c) => c.slice());
+  const RAMP = 36;
+  let ramp = [];
+  const mix = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k];
+  // Colour at position u along a wall: a soft loop through the three pigments.
+  const palAt = (pal, u) => {
+    const f = (((u % 1) + 1) % 1) * 3, i = Math.floor(f), k = f - i;
+    const e = k * k * (3 - 2 * k);
+    return mix(pal[i % 3], pal[(i + 1) % 3], e);
+  };
+  function easePalette() {
+    const target = states[current].pal;
+    for (let i = 0; i < 3; i++) livePal[i] = mix(livePal[i], target[i], reduce ? 1 : .025);
+    ramp = Array.from({ length: RAMP }, (_, i) => palAt(livePal, i / RAMP).map((v) => v | 0));
+    const t = livePal[0];
+    document.documentElement.style.setProperty('--tone', `rgb(${t[0] | 0},${t[1] | 0},${t[2] | 0})`);
+  }
+  const rampAt = (u) => ramp[Math.floor((((u % 1) + 1) % 1) * RAMP)] || [180, 180, 180];
+  const cellHue = (id) => id * .29;
+
+  // ---- Drift layer: the empty page carries its own, softer bubbles (a different style from the walls).
+  // Watercolour washes with pigment at the rim (ref-23) and a few line-drawn bubbles (ref-16). ----
+  const driftCanvas = document.getElementById('drift');
+  const dctx = driftCanvas.getContext('2d');
+  let drifters = [];
+  // A raft is a few small cells packed together, drawn with the same membrane-and-bead language as the walls.
+  function makeRaft(scale) {
+    const cells = [{ x: 0, y: 0, r: rand(12, 22) * scale }];
+    const n = 2 + ((Math.random() * 4) | 0);
+    for (let i = 0; i < n; i++) {
+      const host = cells[(Math.random() * cells.length) | 0];
+      const r = rand(5, 16) * scale, a = rand(0, Math.PI * 2), d = (host.r + r) * .82;
+      cells.push({ x: host.x + Math.cos(a) * d, y: host.y + Math.sin(a) * d, r });
+    }
+    const beads = [];
+    for (const c of cells) {
+      const count = Math.round(Math.PI * 2 * c.r / 3.2);
+      for (let i = 0; i < count; i++) {
+        const a = i / count * Math.PI * 2 + rand(-.05, .05);
+        const x = c.x + Math.cos(a) * c.r, y = c.y + Math.sin(a) * c.r;
+        if (cells.some((o) => o !== c && o.r > c.r && Math.hypot(x - o.x, y - o.y) < o.r - 1.5)) continue;
+        beads.push({ x: x + rand(-1, 1), y: y + rand(-1, 1), r: .7 + Math.pow(Math.random(), 2.4) * 2.4, u: a / (Math.PI * 2) });
+      }
+    }
+    return { cells, beads };
+  }
+  function makeDrifters() {
+    const plan = mobile ? ['raft', 'raft', 'bloom', 'clear'] : ['raft', 'raft', 'raft', 'bloom', 'bloom', 'clear', 'clear'];
+    drifters = plan.map((kind) => ({
+      kind, x: mobile ? rand(0, W) : rand(W * .42, W), y: mobile ? rand(H * .45, H) : rand(0, H),
+      vx: 0, vy: 0, phase: rand(0, 6.28), hue: Math.random(), pulse: 1, rise: rand(.06, .18),
+      raft: kind === 'raft' ? makeRaft(mobile ? .7 : rand(.9, 1.4)) : null,
+      r: kind === 'bloom' ? rand(mobile ? 34 : 50, mobile ? 60 : 96) : rand(mobile ? 10 : 14, mobile ? 22 : 34),
+      lobes: Array.from({ length: 4 }, () => ({ dx: rand(-.25, .25), dy: rand(-.25, .25), s: rand(.6, 1) })),
+    }));
+  }
+  function stirDrifters() {
+    // The chapter's current runs through the empty page too; decorations ride it and swell as they go.
+    for (const d of drifters) { d.vx += rand(-3, -1.2); d.vy += rand(.5, 2); d.pulse = rand(.7, 1.35); }
+  }
+  function drawDrift(now) {
+    dctx.clearRect(0, 0, W, H);
+    for (const d of drifters) {
+      if (!reduce) {
+        d.vx *= .975; d.vy *= .975;
+        d.x += d.vx + Math.sin(now / 4000 + d.phase) * .15;
+        d.y += d.vy - d.rise;
+        d.pulse += (1 - d.pulse) * .02;
+      }
+      // Decorations stay out of the reading column: right of it on desktop, below it on phones.
+      const m = (d.kind === 'raft' ? 60 : d.r) * 1.3, left = mobile ? -m : W * .4, top = mobile ? copy.getBoundingClientRect().bottom + m : -m;
+      if (d.y < top) { d.y = H + m; d.x = rand(left + m, W); }
+      if (d.y > H + m) d.y = top;
+      if (d.x < left) d.x = W + m; else if (d.x > W + m) d.x = left;
+      const sc = d.pulse * (1 + Math.sin(now / 2600 + d.phase) * .04);
+      if (d.kind === 'raft') drawRaft(d, sc, now);
+      else if (d.kind === 'bloom') drawBloom(d, sc);
+      else drawClear(d, sc, now);
+    }
+    dctx.globalAlpha = 1;
+  }
+  function drawRaft(d, sc, now) {
+    const { cells, beads } = d.raft;
+    for (const c of cells) {
+      const x = d.x + c.x * sc, y = d.y + c.y * sc, r = c.r * sc;
+      const col = rampAt(d.hue + c.x * .004);
+      // Clear interior with a faint swirl of water, like the ripples inside ref-20's cells.
+      dctx.globalAlpha = .5;
+      dctx.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},.07)`;
+      dctx.beginPath(); dctx.arc(x, y, r, 0, Math.PI * 2); dctx.fill();
+      if (r > 12) {
+        dctx.globalAlpha = .28; dctx.strokeStyle = `rgb(${col[0]},${col[1]},${col[2]})`; dctx.lineWidth = .7;
+        const turn = now / 5000 + d.phase;
+        dctx.beginPath(); dctx.arc(x, y, r * .55, turn, turn + 2.2); dctx.stroke();
+        dctx.beginPath(); dctx.arc(x, y, r * .3, turn + 3, turn + 4.6); dctx.stroke();
+      }
+      dctx.globalAlpha = .22; dctx.lineWidth = 6;
+      dctx.beginPath(); dctx.arc(x, y, r, 0, Math.PI * 2); dctx.stroke();
+    }
+    for (const b of beads) {
+      const col = rampAt(d.hue + b.u * .3);
+      dctx.globalAlpha = .9; dctx.fillStyle = '#fbfcfb';
+      dctx.beginPath(); dctx.arc(d.x + b.x * sc, d.y + b.y * sc, b.r, 0, Math.PI * 2); dctx.fill();
+      dctx.globalAlpha = .6; dctx.strokeStyle = `rgb(${col[0]},${col[1]},${col[2]})`; dctx.lineWidth = .6; dctx.stroke();
+    }
+  }
+  function drawBloom(d, sc) {
+    // A watercolour bloom: pigment dried at the rim of a few overlapping lobes (ref-23).
+    for (const l of d.lobes) {
+      const x = d.x + l.dx * d.r, y = d.y + l.dy * d.r, r = d.r * l.s * sc;
+      const col = rampAt(d.hue + l.dx);
+      const g = dctx.createRadialGradient(x, y, r * .45, x, y, r);
+      g.addColorStop(0, `rgba(${col[0]},${col[1]},${col[2]},0)`);
+      g.addColorStop(.8, `rgba(${col[0]},${col[1]},${col[2]},.08)`);
+      g.addColorStop(.96, `rgba(${col[0]},${col[1]},${col[2]},.2)`);
+      g.addColorStop(1, `rgba(${col[0]},${col[1]},${col[2]},0)`);
+      dctx.globalAlpha = 1; dctx.fillStyle = g;
+      dctx.beginPath(); dctx.arc(x, y, r, 0, Math.PI * 2); dctx.fill();
+    }
+  }
+  function drawClear(d, sc, now) {
+    // A single clear bubble with a thin film that shifts colour around its rim (ref-22).
+    const r = d.r * sc;
+    dctx.globalAlpha = .7;
+    const film = dctx.createConicGradient ? dctx.createConicGradient(now / 3000 + d.phase, d.x, d.y) : null;
+    if (film) {
+      const a = rampAt(d.hue), b = rampAt(d.hue + .33), c = rampAt(d.hue + .66);
+      film.addColorStop(0, `rgb(${a})`); film.addColorStop(.33, `rgb(${b})`); film.addColorStop(.66, `rgb(${c})`); film.addColorStop(1, `rgb(${a})`);
+      dctx.strokeStyle = film;
+    } else dctx.strokeStyle = 'rgba(31,59,73,.3)';
+    dctx.lineWidth = 1.2;
+    dctx.beginPath(); dctx.arc(d.x, d.y, r, 0, Math.PI * 2); dctx.stroke();
+    dctx.globalAlpha = .9; dctx.strokeStyle = '#fff'; dctx.lineWidth = 1.6;
+    dctx.beginPath(); dctx.arc(d.x, d.y, r * .76, Math.PI * 1.1, Math.PI * 1.42); dctx.stroke();
+  }
+
+  // ---- Chapter control ----
+  function go(index, instant = false) {
+    if (!instant && index !== current) shedTitle();
+    current = clamp(index, 0, states.length - 1);
+    open = false;
+    stage.classList.remove('is-open');
+    const s = states[current];
+    renderCopy(s, false);
+    count.textContent = `0${current + 1} / 0${states.length}`;
+    [...dots.children].forEach((d, i) => d.setAttribute('aria-current', String(i === current)));
+    hint.textContent = current === 0 ? '向下滚动' : current < states.length - 1 ? '点开截图看操作说明' : '';
+    retarget(instant, true);
+    if (!instant) stirDrifters();
+  }
+
+  function retarget(instant, reflow) {
+    const targets = layout(current);
+    const now = clock();
+    bubbles.forEach((b, i) => {
+      const t = targets.get(i);
+      if (t) {
+        if (b.r < 1) {
+          const p = bubbles[t.parent || 0];
+          b.x = p.r > 1 ? p.x : t.x; b.y = p.r > 1 ? p.y : t.y; b.r = 0;
+        }
+        b.tx = t.x; b.ty = t.y; b.tr = t.r; b.tax = t.ax; b.tay = t.ay; b.tk = t.k;
+        b.el.classList.toggle('is-main', !!t.main);
+        b.el.classList.toggle('is-open', !!t.main && open);
+      } else {
+        b.tr = 0;
+      }
+      b.start = instant || reduce ? 0 : now + (i === 0 ? 0 : 140 + i * 80);
+      const key = contentKey(t && t.content);
+      if (key !== b.key) {
+        b.key = key;
+        b.text = t && t.content && t.content.text !== undefined ? { offset: t.content.text } : null;
+        b.content.classList.add('is-out');
+        // Content surfaces only once the foam has gathered into the new wall.
+        b.pending = { html: contentHTML(t && t.content, t ? t.r : 0), at: instant || reduce ? 0 : now + 1150 + i * 70 };
+      }
+      if (instant) { b.x = b.tx; b.y = b.ty; b.r = b.tr; b.ax = b.tax; b.ay = b.tay; b.k = b.tk; }
+    });
+    if (reflow) assignFoam(targets, instant);
+  }
+
+  function renderCopy(s, detail) {
+    copy.classList.add('is-out');
+    clearTimeout(renderCopy.timer);
+    renderCopy.timer = setTimeout(() => {
+      const lines = detail ? '' : s.lines.map((l) => `<p>${l}</p>`).join('');
+      const list = detail && s.detail ? `<ul>${s.detail.map((l) => `<li>${l}</li>`).join('')}</ul>` : '';
+      const tag = current === 0 ? 'h1' : 'h2';
+      copy.innerHTML = `<${tag}>${s.title}</${tag}>${lines}${list}`;
+      setTimeout(() => copy.classList.remove('is-out'), 30);
+    }, reduce ? 0 : 240);
+  }
+
+  // ---- Simulation ----
+  function stepCells(now) {
+    const breathe = reduce ? 0 : 1;
+    for (const b of bubbles) {
+      if (now < b.start) continue;
+      const tx = b.tx + Math.sin(now / 2600 + b.phase) * 4 * breathe;
+      const ty = b.ty + Math.cos(now / 3100 + b.phase) * 4 * breathe;
+      b.vx = (b.vx + (tx - b.x) * .018) * .88;
+      b.vy = (b.vy + (ty - b.y) * .018) * .88;
+      b.x += b.vx; b.y += b.vy;
+      const tr = b.tr * (1 + Math.sin(now / 1900 + b.phase) * .01 * breathe);
+      b.r += (tr - b.r) * (b.tr === 0 ? .16 : .07);
+      if (b.tr === 0 && b.r < .6) b.r = 0;
+      b.ax += (b.tax - b.ax) * .06; b.ay += (b.tay - b.ay) * .06; b.k += (b.tk - b.k) * .06;
+    }
+    for (let i = 0; i < MAX; i++) for (let j = i + 1; j < MAX; j++) {
+      const a = bubbles[i], b = bubbles[j];
+      if (a.r < 1 || b.r < 1) continue;
+      if (Math.hypot(a.tx - a.x, a.ty - a.y) > a.r * .5 || Math.hypot(b.tx - b.x, b.ty - b.y) > b.r * .5) continue;
+      const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1;
+      const min = (reach(a, dx / d, dy / d) + reach(b, -dx / d, -dy / d)) * .76;
+      if (d < min) {
+        const push = (min - d) * .25, wa = b.r / (a.r + b.r), wb = a.r / (a.r + b.r);
+        a.x -= dx / d * push * wa; a.y -= dy / d * push * wa;
+        b.x += dx / d * push * wb; b.y += dy / d * push * wb;
+      }
+    }
+  }
+
+  function render(now) {
+    for (const b of bubbles) {
+      const hidden = b.r < 1;
+      b.el.classList.toggle('is-hidden', hidden);
+      if (!hidden) {
+        const { hw, hh, crx, cry } = dims(b);
+        b.el.style.width = `${hw * 2}px`; b.el.style.height = `${hh * 2}px`;
+        b.el.style.borderRadius = `${crx}px / ${cry}px`;
+        b.el.style.transform = `translate(${b.x - hw}px, ${b.y - hh}px)`;
+      }
+      if (b.pending && now >= b.pending.at) {
+        b.content.innerHTML = b.pending.html;
+        b.pending = null;
+        setTimeout(() => b.content.classList.remove('is-out'), 40);
+      }
+    }
+
+    drawDrift(now);
+    ctx.clearRect(0, 0, W, H);
+    drawMembranes(now);
+    const R = mobile ? 54 : 84;
+    for (const p of foam) {
+      let [x, y] = slotPosition(p);
+      const cell = bubbles[p.cell];
+      if (cell.r < 1 && !p.flying) continue;
+      let size = p.size, alpha = p.alpha;
+      if (p.flying) {
+        const local = now - transitionStart - p.delay;
+        if (local <= 0) { x = p.sx; y = p.sy; }
+        else if (local < p.dur) {
+          const u = local / p.dur, e = u < .5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2, v = 1 - e;
+          const swell = Math.sin(Math.PI * e);
+          x = v * v * p.sx + 2 * v * e * p.cx + e * e * x + Math.sin(e * 7 + p.phase) * 10 * swell;
+          y = v * v * p.sy + 2 * v * e * p.cy + e * e * y + Math.cos(e * 5 + p.phase) * 8 * swell;
+          size = p.size * Math.max(.12, 1 + p.grow * swell);
+          if (p.fade) alpha = p.alpha * (1 - swell * .92);
+        } else p.flying = false;
+      } else if (!reduce) {
+        x += Math.sin(now / 1300 + p.phase) * .6;
+        y += Math.cos(now / 1500 + p.phase) * .6;
+        size = p.size * (1 + Math.sin(now / 900 + p.phase) * .1);
+      }
+      // The pointer ruffles the wall; a spring smooths it back.
+      if (!reduce) {
+        const ax = x + p.ox - pointer.x, ay = y + p.oy - pointer.y, d2 = ax * ax + ay * ay;
+        if (d2 < R * R) { const d = Math.sqrt(d2) || 1, f = (1 - d / R) * 1.8; p.vx += ax / d * f; p.vy += ay / d * f; }
+        p.vx = (p.vx - p.ox * .06) * .84; p.vy = (p.vy - p.oy * .06) * .84;
+        p.ox += p.vx; p.oy += p.vy;
+      }
+      p.x = x + p.ox; p.y = y + p.oy;
+      const col = rampAt(p.t + cellHue(p.cell) + p.hueJitter);
+      const rgb = `${col[0]},${col[1]},${col[2]}`;
+      // Settled beads are pale foam on the pigment band (ref-20); airborne ones become tinted soap bubbles.
+      const air = p.flying ? Math.sin(Math.PI * clamp((now - transitionStart - p.delay) / p.dur, 0, 1)) : 0;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+      ctx.globalAlpha = alpha * (.78 - air * .5);
+      ctx.fillStyle = air > .3 ? `rgba(${rgb},.35)` : '#fbfcfb';
+      ctx.fill();
+      ctx.globalAlpha = alpha * (.55 + air * .35);
+      ctx.strokeStyle = `rgb(${rgb})`; ctx.lineWidth = size > 2.2 ? .9 : .6;
+      ctx.stroke();
+      if (size > 3.2) {
+        ctx.globalAlpha = alpha * .9; ctx.fillStyle = '#fff';
+        ctx.beginPath(); ctx.arc(p.x - size * .35, p.y - size * .35, size * .22, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+
+    ctx.globalAlpha = 1;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (let i = glyphs.length - 1; i >= 0; i--) {
+      const g = glyphs[i];
+      if (g.y0 === undefined) g.y0 = g.y;
+      // Each character holds its place in the title until its turn, then lets go.
+      if (now - g.born >= g.delay) { g.vy += .045; g.vx *= .99; g.x += g.vx; g.y += g.vy; g.rot += g.vr; }
+      if (g.y >= g.floor) {
+        ripples.push({ x: g.x, y: g.floor, r: 2, life: 1 });
+        glyphs.splice(i, 1);
+        continue;
+      }
+      ctx.save();
+      ctx.translate(g.x, g.y); ctx.rotate(g.rot);
+      // Glyphs shrink as they fall, so a headline-size character lands as a small drop.
+      const fall = clamp((g.y - g.y0) / Math.max(1, g.floor - g.y0), 0, 1);
+      ctx.font = `600 ${(g.size * (1 - fall * (1 - g.shrink))).toFixed(1)}px ${SERIF}`;
+      ctx.fillStyle = `rgba(31,59,73,${(.9 - fall * .45).toFixed(2)})`;
+      ctx.fillText(g.ch, 0, 0);
+      ctx.restore();
+    }
+    for (let i = ripples.length - 1; i >= 0; i--) {
+      const r = ripples[i];
+      r.r += .55; r.life -= .018;
+      if (r.life <= 0) { ripples.splice(i, 1); continue; }
+      ctx.globalAlpha = r.life * .6;
+      ctx.beginPath(); ctx.ellipse(r.x, r.y, r.r * 1.7, r.r * .4, 0, 0, Math.PI * 2);
+      const rc = livePal[0]; ctx.strokeStyle = `rgb(${rc[0] | 0},${rc[1] | 0},${rc[2] | 0})`; ctx.lineWidth = 1; ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function frame() {
+    const now = clock();
+    easePalette();
+    stepCells(now);
+    render(now);
+    requestAnimationFrame(frame);
+  }
+
+  function setSize() {
+    W = innerWidth; H = innerHeight; mobile = W <= 760;
+    DPR = Math.min(2, devicePixelRatio || 1);
+    canvas.width = W * DPR; canvas.height = H * DPR;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    const wanted = mobile ? 650 : 1100;
+    if (wanted !== N) { N = wanted; foam = Array.from({ length: N }, makeGrain); }
+    driftCanvas.width = W * DPR; driftCanvas.height = H * DPR;
+    dctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    makeDrifters();
+  }
+
+  function toggleOpen() {
+    const s = states[current];
+    if (!s.detail) return;
+    open = !open;
+    stage.classList.toggle('is-open', open);
+    renderCopy(s, open);
+    const targets = layout(current);
+    bubbles.forEach((b, i) => {
+      const t = targets.get(i);
+      if (!t) return;
+      b.tx = t.x; b.ty = t.y; b.tr = t.r; b.tax = t.ax; b.tay = t.ay; b.tk = t.k; b.start = 0;
+      b.el.classList.toggle('is-open', !!t.main && open);
+    });
+    // Wall grains stay attached to their cells, so the foam stretches with the growing lens.
+  }
+
+  const turn = (dir) => {
+    if (locked || open) return;
+    const next = clamp(current + dir, 0, states.length - 1);
+    if (next === current) return;
+    locked = true;
+    go(next);
+    setTimeout(() => { locked = false; }, reduce ? 300 : 1100);
+  };
+  addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const d = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+    if (Math.abs(d) > 6) turn(Math.sign(d));
+  }, { passive: false });
+  addEventListener('keydown', (e) => {
+    if (['ArrowDown', 'ArrowRight', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); turn(1); }
+    if (['ArrowUp', 'ArrowLeft', 'PageUp'].includes(e.key)) { e.preventDefault(); turn(-1); }
+    if (e.key === 'Escape' && open) toggleOpen();
+  });
+  let touch = null;
+  addEventListener('pointerdown', (e) => { touch = { x: e.clientX, y: e.clientY }; });
+  addEventListener('pointerup', (e) => {
+    if (!touch) return;
+    const dx = e.clientX - touch.x, dy = e.clientY - touch.y;
+    touch = null;
+    if (e.pointerType !== 'mouse' && Math.max(Math.abs(dx), Math.abs(dy)) > 46) turn(Math.abs(dy) > Math.abs(dx) ? -Math.sign(dy) : -Math.sign(dx));
+  });
+  addEventListener('pointermove', (e) => { pointer.x = e.clientX; pointer.y = e.clientY; });
+  document.addEventListener('mouseleave', () => { pointer.x = pointer.y = -9999; });
+  bubbles[0].el.addEventListener('click', (e) => { if (!e.target.closest('a')) toggleOpen(); });
+  stage.addEventListener('click', (e) => { if (e.target.closest('a')) e.preventDefault(); });
+
+  states.forEach((s, i) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.setAttribute('aria-label', s.title.replace(/<br>/g, ''));
+    b.addEventListener('click', () => { if (!open && i !== current) go(i); });
+    dots.appendChild(b);
+  });
+  let resizeTimer = 0;
+  addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => { setSize(); for (const b of bubbles) b.key = ''; retarget(false, true); }, 150);
+  });
+
+  setSize();
+  // Opening: the foam starts as a loose drift across the upper page and is carried in to build the first cells.
+  for (const p of foam) { p.x = rand(-60, W * .7); p.y = rand(-40, H * .5); }
+  for (const b of bubbles) { b.x = W * .7; b.y = H * .55; b.r = 0; }
+  go(0);
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

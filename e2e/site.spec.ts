@@ -9,16 +9,22 @@ for (const width of [375, 768, 1024, 1440]) {
       content: document.documentElement.scrollWidth,
     }));
     expect(sizes.content).toBeLessThanOrEqual(sizes.viewport);
-    await expect(page.getByRole('heading', { level: 1, name: /潮落有迹.*梦醒留痕。/ })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: /梦醒以后，\s*仍有迹可循/ })).toBeVisible();
   });
 }
 
 test('navigation opens the combined App page', async ({ page }) => {
   await page.goto('');
-  await page.getByRole('link', { name: '走进梦潮', exact: true }).first().click();
-  await expect(page.getByRole('heading', { name: /从梦醒的一刻.*到再次遇见。/ })).toBeVisible();
+  await page.getByRole('button', { name: '前往下载' }).click();
+  await page.getByRole('link', { name: '功能与使用说明' }).click();
+  await expect(page.getByRole('heading', { name: /记录梦境，.*随时回来看看。/ })).toBeVisible();
+  await expect(page.locator('.app-deck')).toBeVisible();
+  await expect(page.locator('.app-section')).toHaveCount(6);
+  await page.mouse.move(400, 400);
+  await page.mouse.wheel(0, 650);
+  await expect.poll(() => page.locator('.app-deck').evaluate((deck) =>
+    Math.round(deck.scrollLeft / deck.clientWidth))).toBe(1);
   await expect(page.getByRole('heading', { name: '下载并安装梦潮' })).toBeVisible();
-  await expect(page.locator('a[href="#/features"], a[href="#/guide"]')).toHaveCount(0);
 });
 
 test('each App area keeps its media and guide together', async ({ page }) => {

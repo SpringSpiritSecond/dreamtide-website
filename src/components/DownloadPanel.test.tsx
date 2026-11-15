@@ -53,8 +53,8 @@ describe('DownloadPanel', () => {
       'href',
       'https://github.com/SpringSpiritSecond/dreamtide-website/releases',
     );
-    expect(screen.getByRole('link', { name: '查看全部版本' })).not.toHaveClass(
-      'button',
+    expect(screen.getByRole('link', { name: '查看全部版本' })).toHaveClass(
+      'version-link',
     );
   });
 });
