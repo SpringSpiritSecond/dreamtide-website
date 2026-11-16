@@ -24,16 +24,14 @@ html:has(.tide-experience) { overflow: hidden; }
 .install-card { border: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; }
 .app-sections__list { border: 0; }
 .app-section, .app-section:nth-child(3n + 2), .app-section:nth-child(3n) { position: relative; min-height: 100svh; isolation: isolate; }
-.app-section__media .media-frame {
-  overflow: hidden; border: 3px solid rgba(255,255,249,.9);
-  border-radius: 32px 42px 36px 40px;
-  box-shadow: 0 0 0 2px rgba(37,116,129,.25), 0 24px 55px rgba(36,91,104,.13);
+/* App screens carry their own rounded corners: no border, no box, no crop. */
+.app-section__media .media-frame,
+.app-section:last-child .app-section__media .media-frame {
+  overflow: visible; border: 0; border-radius: 0; background: none; box-shadow: none;
 }
-.app-section__media .media-frame--portrait { width: min(100%, 27svh); aspect-ratio: 1 / 1.85; }
-.app-section__gallery .app-gallery__stage .media-frame--portrait { width: min(100%, 21svh); }
-.app-section__media .media-frame img, .app-section__media .media-frame video { object-fit: contain; }
-.app-section:last-child .app-section__media .media-frame { border-radius: 28px 76px 28px 28px; }
-.app-section:last-child .app-section__media .media-frame img { object-fit: contain; }
+.app-section__media .media-frame--portrait { width: min(100%, 31svh); aspect-ratio: 702 / 1520; }
+.app-section__gallery .app-gallery__stage .media-frame--portrait { width: min(100%, 26svh); }
+.app-section__media .media-frame img { object-fit: contain; filter: drop-shadow(0 18px 30px rgba(27, 41, 87, .1)); }
 
 /* Four approved chapter compositions, rebuilt from the morphology studies. */
 body:has(.tide-experience) .site-header {
@@ -53,7 +51,7 @@ body:has(.tide-experience) .site-header .brand span { font-family: "Noto Sans SC
 .tide-experience { position: relative; height: 100svh; }
 .tide-stage {
   position: sticky; top: 0; height: 100svh; min-height: 0; overflow: hidden; isolation: isolate;
-  background: #eef2ef url('/media/chapter-art/paper.webp') center / cover no-repeat;
+  background: #eef2ef;
   color: #195971; user-select: none;
 }
 .tide-water-canvas, .tide-foam-canvas {

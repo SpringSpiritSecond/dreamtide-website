@@ -5,12 +5,14 @@
 export type Rgb = readonly [number, number, number];
 export type Rect = [number, number, number, number];
 export type WashChapter = {
-  shot?: { w: number; h: number };
-  feature?: 'word' | 'cta';
+  /** Phone screens shown side by side; the first one is the main screen. */
+  shots?: readonly { w: number; h: number }[];
+  feature?: 'cta';
   pal: readonly Rgb[];
   deep: Rgb;
 };
-export type WashLayout = { copy: Rect; shot?: Rect; feature?: [number, number, number] };
+/** `shot` is the box around all screens (the wash thins out there); `shots` are the screens themselves. */
+export type WashLayout = { copy: Rect; shot?: Rect; shots?: Rect[]; feature?: [number, number, number] };
 
 type Print = {
   x: number; y: number; r: number; sx: number; rot: number; wob: number; ghost: boolean;
@@ -33,23 +35,29 @@ function mulberry(seed: number) {
   };
 }
 
+/** Width / height of the box a chapter's screens are composed in. */
+export const COMPOSE_ASPECT = .92;
+/**
+ * The box a chapter's screens are arranged in: right of the copy on wide screens, under it on phones.
+ * Pieces are placed in fractions of this box, so one composition works at every size.
+ */
+export function composeBox(W: number, H: number): Rect {
+  const mobile = W < 760;
+  const area: Rect = mobile
+    ? [16, Math.max(230, H * .3), W - 32, H - Math.max(230, H * .3) - 56]
+    : [W * .46, H * .08, W * .5, H * .8];
+  const h = Math.min(area[3], area[2] / COMPOSE_ASPECT), w = h * COMPOSE_ASPECT;
+  return [area[0] + (area[2] - w) / 2, area[1] + (area[3] - h) / 2, w, h];
+}
+
 /** Where copy, screenshot and feature print sit for a chapter at a given viewport size. */
 export function layoutFor(chapter: WashChapter, W: number, H: number): WashLayout {
   const mobile = W < 760;
   const copy: Rect = mobile ? [0, 40, W, 290] : [0, H / 2 - 190, clamp(W * .06, 16, 112) + Math.min(W * .32, 440) + 30, H / 2 + 190];
   const layout: WashLayout = { copy };
-  if (chapter.shot) {
-    let h = mobile ? H * .5 : Math.min(H * .8, 760);
-    let w = h * chapter.shot.w / chapter.shot.h;
-    const maxW = mobile ? W - 48 : W * .44;
-    if (w > maxW) { w = maxW; h = w * chapter.shot.h / chapter.shot.w; }
-    const cx = mobile ? W / 2 : W * .68, cy = mobile ? H - h / 2 - 58 : H / 2;
-    layout.shot = [cx - w / 2, cy - h / 2, w, h];
-  }
+  if (chapter.shots?.length) layout.shot = composeBox(W, H);
   if (chapter.feature) {
-    const r = chapter.feature === 'word'
-      ? (mobile ? Math.min(W * .36, H * .2) : Math.min(H * .3, W * .2))
-      : (mobile ? Math.min(W * .34, H * .19) : Math.min(H * .22, W * .15));
+    const r = mobile ? Math.min(W * .34, H * .19) : Math.min(H * .22, W * .15);
     layout.feature = [mobile ? W / 2 : W * .66, mobile ? H * .66 : H * .52, r];
   }
   return layout;
@@ -184,6 +192,74 @@ function chapterPrints(index: number, L: WashLayout, W: number, H: number): Prin
   return P.slice(0, 20);
 }
 
+// ---------- Still painting for browsers without WebGL ----------
+// Same recipe as the shader, painted once per chapter on the CPU at low resolution (the wash is soft anyway).
+const hash2 = (x: number, y: number) => {
+  let h = (Math.floor(x) * 374761393 + Math.floor(y) * 668265263) | 0;
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967295;
+};
+const vnoise = (x: number, y: number) => {
+  const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+  const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+  const a = hash2(xi, yi), b = hash2(xi + 1, yi), c = hash2(xi, yi + 1), d = hash2(xi + 1, yi + 1);
+  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+};
+const fbm = (x: number, y: number) => vnoise(x, y) * .5 + vnoise(x * 2.1, y * 2.1) * .27 + vnoise(x * 4.3, y * 4.3) * .15 + vnoise(x * 8.7, y * 8.7) * .08;
+const smooth = (a: number, b: number, x: number) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+
+function paintStill(chapter: WashChapter, index: number, W: number, H: number): HTMLCanvasElement {
+  const s = Math.min(1, 380 / H), w = Math.max(1, Math.round(W * s)), h = Math.max(1, Math.round(H * s));
+  const out = document.createElement('canvas');
+  out.width = w; out.height = h;
+  const ctx = out.getContext('2d');
+  if (!ctx) return out;
+  const L = layoutFor(chapter, W, H), S = H / 800, prints = chapterPrints(index, L, W, H);
+  const seed = [index * 13.7 + 2.3, index * 5.9 + 1.7];
+  const img = ctx.createImageData(w, h), d = img.data;
+  const shot = L.shot;
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+    const px = i / s, py = j / s, ux = px / S, uy = py / S;
+    const wet = fbm(ux * .0036 + seed[0], uy * .0036 + seed[1]);
+    let amount = smooth(.36, .66, wet);
+    const c = L.copy;
+    const m = Math.min(px - c[0], c[2] - px, py - c[1], c[3] - py) / S;
+    amount *= 1 - smooth(-60, 40, m) * .8;
+    if (shot) {
+      const qx = Math.abs(px - shot[0] - shot[2] / 2) - shot[2] / 2 + 20 * S, qy = Math.abs(py - shot[1] - shot[3] / 2) - shot[3] / 2 + 20 * S;
+      const sd = (Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - 20 * S) / S + (fbm(ux * .012 + 4, uy * .012) - .5) * 70;
+      amount *= .25 + .75 * smooth(0, 90, sd);
+    }
+    const tide = Math.exp(-Math.abs(wet - .5) / .018) * .16 * smooth(.2, .6, amount + .3);
+    const pig = [0, 0, 0];
+    let ws = 0;
+    for (let k = 0; k < 5; k++) {
+      const wk = Math.pow(fbm(ux * .0042 + 11 + k * 17.3, uy * .0042 + k * 7.1), 4) * (k === 0 ? 1.5 : 1);
+      ws += wk; for (let q = 0; q < 3; q++) pig[q] += chapter.pal[k][q] * wk;
+    }
+    const pool = smooth(.68, .8, fbm(ux * .006 + 61, uy * .006 + 3)) * smooth(.3, .7, amount);
+    for (let q = 0; q < 3; q++) pig[q] = lerp(pig[q] / ws, chapter.deep[q], pool * .75);
+    let a = amount * .56 + tide + pool * .18;
+    a *= .8 + vnoise(ux * .18, uy * .18) * .28;
+    for (const p of prints) {
+      const dx = (px - p.x) / S, dy = (py - p.y) / S, r = p.r / S;
+      if (Math.abs(dx) > r * 1.6 + 20 || Math.abs(dy) > r * 1.6 + 20) continue;
+      const cr = Math.cos(p.rot), sn = Math.sin(p.rot);
+      const ex = (dx * cr + dy * sn) / p.sx, ey = (-dx * sn + dy * cr) * p.sx, ang = Math.atan2(ey, ex);
+      const edge = r * (1 + (vnoise(Math.cos(ang) * 1.8 + p.wob, Math.sin(ang) * 1.8 + p.wob) - .5) * .22);
+      const dd = Math.hypot(ex, ey) - edge;
+      if (p.ghost) { a *= 1 - (1 - smooth(-r * .35, 4, dd)) * .55; a += Math.exp(-Math.abs(dd) / 5) * .05 * amount; }
+      else if (dd < 0) a *= 1 - smooth(0, -3.5, dd) * .93;
+      else a += Math.exp(-dd / (1.6 + r * .03)) * (.32 + amount * .25) * (.7 + vnoise(ux * .4, uy * .4) * .5);
+    }
+    a = Math.min(.82, a);
+    const dark = 1 - Math.max(0, a - .45) * .35, o = (j * w + i) * 4;
+    d[o] = lerp(247, pig[0], a) * dark; d[o + 1] = lerp(244, pig[1], a) * dark; d[o + 2] = lerp(238, pig[2], a) * dark; d[o + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+  return out;
+}
+
 export type WatercolorTide = { go: (index: number, instant?: boolean) => void; resize: () => void; dispose: () => void };
 
 export function createWatercolorTide(canvas: HTMLCanvasElement, chapters: readonly WashChapter[], reduce: boolean): WatercolorTide {
@@ -205,6 +281,10 @@ export function createWatercolorTide(canvas: HTMLCanvasElement, chapters: readon
     for (const name of ['R', 'D', 'S', 't', 'k', 'seedA', 'seedB', 'P', 'DP', 'copyBox', 'shot', 'shotOn', 'PR', 'PX']) U[name] = gl.getUniformLocation(pr, name);
   }
 
+  // Without WebGL, fall back to still paintings that cross-fade between chapters.
+  const ctx2d = gl ? null : canvas.getContext('2d');
+  const still: { from: HTMLCanvasElement | null; to: HTMLCanvasElement | null; start: number; done: boolean } = { from: null, to: null, start: 0, done: true };
+
   let W = 1, H = 1, DPR = 1, current = -1, raf = 0;
   let prints: Print[] = [];
   const live = {
@@ -221,6 +301,7 @@ export function createWatercolorTide(canvas: HTMLCanvasElement, chapters: readon
     canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
     gl?.viewport(0, 0, canvas.width, canvas.height);
     if (current >= 0) prints = chapterPrints(current, layoutFor(chapters[current], W, H), W, H);
+    if (ctx2d && current >= 0) Object.assign(still, { from: null, to: paintStill(chapters[current], current, W, H), start: 0, done: false });
   };
 
   const go = (index: number, instant = false) => {
@@ -228,6 +309,9 @@ export function createWatercolorTide(canvas: HTMLCanvasElement, chapters: readon
     const prev = current;
     current = index;
     const now = performance.now();
+    if (ctx2d) {
+      Object.assign(still, { from: instant || reduce ? null : still.to, to: paintStill(chapters[index], index, W, H), start: now, done: false });
+    }
     for (const p of prints) if (!p.cursor && !p.dying) p.dying = now;
     const fresh = chapterPrints(index, layoutFor(chapters[index], W, H), W, H);
     fresh.forEach((p, i) => { p.born = instant || reduce ? 0 : now + 380 + (p.feature ? 0 : 160 + i * 70); });
@@ -297,6 +381,18 @@ export function createWatercolorTide(canvas: HTMLCanvasElement, chapters: readon
       p.a = g > 0 ? 1 : 0; p.draw = p.r * g;
       return true;
     });
+    if (ctx2d) {
+      if (still.done || !still.to) return;
+      const k = still.from ? clamp((now - still.start) / 1400, 0, 1) : 1;
+      ctx2d.imageSmoothingQuality = 'high';
+      ctx2d.globalAlpha = 1;
+      if (still.from) ctx2d.drawImage(still.from, 0, 0, canvas.width, canvas.height);
+      ctx2d.globalAlpha = ease(k);
+      ctx2d.drawImage(still.to, 0, 0, canvas.width, canvas.height);
+      ctx2d.globalAlpha = 1;
+      if (k >= 1) still.done = true;
+      return;
+    }
     if (!gl) return;
     const list = prints.length > N ? prints.filter((p) => !p.dying).concat(prints.filter((p) => p.dying)).slice(0, N) : prints;
     PRbuf.fill(0); PXbuf.fill(0);

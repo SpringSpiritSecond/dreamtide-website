@@ -75,7 +75,7 @@ function AppPage({ releaseState }: { releaseState: ReturnType<typeof useLatestRe
         <LivingFoam mood="welcome" className="subpage-hero__foam" />
         <p className="eyebrow">DREAMTIDE · INTO THE TIDE</p>
         <h1><span>记录梦境，</span><span>随时回来看看。</span></h1>
-        <p>在梦潮写下梦境、选择日期，保存后添加标签和注记；也能从档案与词云重新找到它。</p>
+        <p>在梦潮写下梦境、选择日期，保存后添加标签和注记；也能在观梦里按记录或词云重新找到它。</p>
       </header>
       <section className="install-card" aria-labelledby="install-title">
         <LivingFoam mood="install" className="app-screen__foam" />

@@ -1,6 +1,7 @@
 /* Home: a live watercolour wash with bubble prints (see src/lib/watercolorTide.ts). */
 html:has(.watercolor-tide) { overflow: hidden; }
-body:has(.watercolor-tide) { --wash-ink: #24343c; --wash-ink-soft: #56666d; }
+/* Ink matches the App's own ink so text and screens read as one piece. */
+body:has(.watercolor-tide) { --wash-ink: #1b2957; --wash-ink-soft: #55608a; }
 body:has(.watercolor-tide) .site-footer { display: none; }
 body:has(.watercolor-tide) .site-header {
   top: clamp(24px, 3.6vh, 34px); left: clamp(16px, 6vw, 112px); z-index: 30;
@@ -41,27 +42,89 @@ body:has(.watercolor-tide) .site-header .brand small {
   color: var(--wash-ink); font-size: 15px; text-decoration: none; border-bottom: 1px solid currentColor;
 }
 
-/* Screenshots sit on the paper as they are: no frame, no crop. */
+/*
+ * Each chapter is a small composition: phones laid on the paper at slight angles, the main one inside a
+ * hand-drawn ink frame, and close-ups cut into bubble-print shapes. Screens are never cropped; close-ups
+ * are extra views of a part that the whole screen also shows.
+ */
 .wash-shot {
   position: absolute; z-index: 2; padding: 0; border: 0; background: none; cursor: zoom-in;
-  border-radius: 3.2% / 1.5%; overflow: hidden;
-  opacity: 0; transform: translateY(10px) scale(.985); visibility: hidden;
-  transition: opacity .7s ease, transform 1s cubic-bezier(.2, .7, .2, 1), visibility 0s .7s;
+  border-radius: 11% / 5%;
+  opacity: 0; visibility: hidden;
+  transform: translateY(46px) rotate(calc(var(--rot, 0deg) + 7deg)) scale(.92);
+  transition: opacity .45s ease, transform .9s cubic-bezier(.2, .8, .2, 1), visibility 0s .9s;
 }
-.wash-shot.is-wide { border-radius: 1.6% / 2%; }
-.wash-shot img { display: block; width: 100%; height: 100%; }
-.wash-shot.is-on { opacity: 1; transform: none; visibility: visible; transition-delay: .52s, .52s, 0s; }
+.wash-shot img { position: relative; display: block; width: 100%; height: 100%; filter: drop-shadow(0 20px 32px rgba(27, 41, 87, .13)); }
+.wash-shot.is-on {
+  opacity: 1; visibility: visible; transform: rotate(var(--rot, 0deg));
+  transition-delay: calc(.28s + var(--order, 0) * .14s), calc(.28s + var(--order, 0) * .14s), 0s;
+}
+/* Picking a screen up: it straightens and lifts a little. */
+.wash-shot.is-on:hover, .wash-shot.is-on:focus-visible {
+  z-index: 20 !important; transform: rotate(calc(var(--rot, 0deg) * .25)) translateY(-10px) scale(1.03);
+  transition: transform .5s cubic-bezier(.2, .8, .2, 1), opacity .3s; transition-delay: 0s;
+}
 .wash-shot.is-open { cursor: zoom-out; }
-.wash-shot:focus-visible { outline: 2px solid var(--wash-ink); outline-offset: 4px; }
+.wash-shot:focus-visible { outline: none; }
+.wash-shot:focus-visible img { outline: 2px solid var(--wash-ink); outline-offset: 6px; border-radius: 11% / 5%; }
 
-/* The hero word and the download link live inside a large paper-white bubble print. */
+/* Hand-drawn frame: an ink line and a pigment line, each a little off square, as if sketched twice. */
+.wash-shot.has-frame::before, .wash-shot.has-frame::after {
+  content: ""; position: absolute; pointer-events: none;
+  border-radius: 46px 34px 52px 38px / 36px 50px 34px 48px;
+  transition: transform 1.2s cubic-bezier(.2, .8, .2, 1), opacity .6s;
+}
+.wash-shot.has-frame::before { inset: -16px -13px -18px -15px; border: 1.5px solid rgba(27, 41, 87, .5); transform: rotate(-2.6deg) scale(.96); opacity: 0; }
+.wash-shot.has-frame::after { inset: -9px -18px -11px -8px; border: 2px solid rgba(var(--tone), .55); transform: rotate(2.2deg) scale(.96); opacity: 0; }
+.wash-shot.has-frame.is-on::before { transform: rotate(-2.6deg); opacity: 1; transition-delay: .7s; }
+.wash-shot.has-frame.is-on::after { transform: rotate(2.2deg); opacity: 1; transition-delay: .85s; }
+
+/* Close-ups in a bubble-print shape: paper-white rim, pigment pooled at the edge, a few small bubbles. */
+.wash-lens {
+  position: absolute; z-index: 3; pointer-events: none;
+  opacity: 0; transform: rotate(calc(var(--rot, 0deg) - 25deg)) scale(.2);
+  transition: opacity .4s ease, transform .9s cubic-bezier(.3, 1.35, .45, 1);
+}
+.wash-lens.is-on {
+  opacity: 1; transform: rotate(var(--rot, 0deg));
+  transition-delay: calc(.55s + var(--order, 0) * .16s);
+}
+.wash-lens__window, .wash-lens::before {
+  position: absolute; inset: 0; border-radius: 58% 42% 51% 49% / 46% 55% 45% 54%;
+  animation: wash-lens-shape 11s ease-in-out infinite alternate;
+}
+.wash-lens__window {
+  overflow: hidden; background: #f6f6f3;
+  box-shadow: 0 0 0 5px rgba(255, 255, 255, .78), 0 0 0 7px rgba(var(--tone), .55), 0 16px 30px rgba(27, 41, 87, .14);
+}
+.wash-lens__window img { position: absolute; max-width: none; }
+/* Pigment pooled just outside the rim, and three small bubbles beside it. */
+.wash-lens::before {
+  content: ""; inset: -11px; z-index: -1;
+  background: radial-gradient(closest-side, transparent 86%, rgba(var(--tone), .32) 93%, transparent 100%);
+  filter: blur(1.5px);
+}
+.wash-lens::after {
+  content: ""; position: absolute; inset: -18%; pointer-events: none;
+  background:
+    radial-gradient(circle at 88% 14%, transparent 0 5px, rgba(var(--tone), .7) 5.5px 6.5px, rgba(255, 255, 255, .7) 7px 8px, transparent 8.5px),
+    radial-gradient(circle at 95% 27%, transparent 0 2.5px, rgba(var(--tone), .7) 3px 4px, transparent 4.5px),
+    radial-gradient(circle at 9% 86%, transparent 0 3.5px, rgba(var(--tone), .7) 4px 5px, transparent 5.5px);
+}
+.wash-lens:nth-of-type(3n)::after { transform: rotate(150deg); }
+@keyframes wash-lens-shape {
+  0% { border-radius: 58% 42% 51% 49% / 46% 55% 45% 54%; }
+  50% { border-radius: 46% 54% 44% 56% / 55% 45% 57% 43%; }
+  100% { border-radius: 52% 48% 60% 40% / 42% 58% 47% 53%; }
+}
+
+/* The download link lives inside a large paper-white bubble print. */
 .wash-feature {
   position: absolute; z-index: 2; display: grid; place-content: center; text-align: center;
   opacity: 0; visibility: hidden; transition: opacity .8s ease, visibility 0s .8s;
   font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", STSong, serif;
 }
 .wash-feature.is-on { opacity: 1; visibility: visible; transition-delay: .7s, 0s; }
-.wash-feature__word { font-weight: 600; font-size: var(--word, 110px); letter-spacing: .1em; line-height: 1; color: var(--wash-ink); }
 .wash-feature__download {
   display: grid; gap: 8px; padding: 14px 18px; border-radius: 10px;
   color: var(--wash-ink); text-decoration: none; font-size: clamp(20px, 1.8vw, 26px); letter-spacing: .1em;
@@ -80,7 +143,9 @@ body:has(.watercolor-tide) .site-header .brand small {
 .wash-dots button:focus-visible { outline: 2px solid var(--wash-ink); outline-offset: 3px; }
 .wash-hint { position: absolute; z-index: 4; right: clamp(16px, 4.2vw, 60px); bottom: 26px; margin: 0; font-size: 14px; color: var(--wash-ink-soft); }
 
-.wash-stage.is-still .wash-copy > *, .wash-stage.is-still .wash-shot, .wash-stage.is-still .wash-feature { animation: none; transition: none; }
+.wash-stage.is-still .wash-copy > *, .wash-stage.is-still .wash-shot, .wash-stage.is-still .wash-shot::before,
+.wash-stage.is-still .wash-shot::after, .wash-stage.is-still .wash-lens, .wash-stage.is-still .wash-lens__window,
+.wash-stage.is-still .wash-lens::before, .wash-stage.is-still .wash-feature { animation: none; transition: none; }
 
 @media (max-width: 760px) {
   body:has(.watercolor-tide) .site-header { top: 18px; left: 16px; }

@@ -5,7 +5,7 @@ import { appSections, type AppSection } from '../content/siteContent';
 import { MediaFrame } from './MediaFrame';
 import { LivingFoam, type FoamMood } from './LivingFoam';
 
-const sectionMoods: FoamMood[] = ['home', 'write', 'record', 'archive', 'cloud', 'sharePage'];
+const sectionMoods: FoamMood[] = ['home', 'write', 'record', 'archive', 'cloud', 'archive', 'sharePage'];
 
 function SectionMedia({ section }: { section: AppSection }) {
   const [active, setActive] = useState(0);
@@ -36,7 +36,7 @@ function SectionMedia({ section }: { section: AppSection }) {
       }}>
       <LivingFoam mood={sectionMoods[Number(section.number) - 1]} className="app-media-detail__foam" />
       <div className="app-media-detail__inner">
-        <div className="app-media-detail__topline"><span>梦潮 DreamTide</span><span>{section.number} / 06</span></div>
+        <div className="app-media-detail__topline"><span>梦潮 DreamTide</span><span>{section.number} / {String(appSections.length).padStart(2, '0')}</span></div>
         <button type="button" className="app-media-detail__close" autoFocus onClick={closeDetail}>返回{section.title} <ChevronLeft aria-hidden="true" size={16} /></button>
         <div className="app-media-detail__image"><img src={`${import.meta.env.BASE_URL}${media.src}`} alt={media.alt} /></div>
         <div className="app-media-detail__copy">
@@ -108,7 +108,7 @@ export function FeatureStory() {
         <LivingFoam mood="overview" className="app-screen__foam" />
         <p className="eyebrow">功能一览</p>
         <h2 id="app-sections-title"><span>从写下梦境，</span><span>到整理与回看。</span></h2>
-        <p>下面按实际使用顺序介绍书写、标签与隐私标记、档案筛选、词云和分享预览。</p>
+        <p>下面按实际使用顺序介绍首页、书写、读梦与隐私、观梦、日历和分享。</p>
       </div>
 
       <div className="app-sections__list">

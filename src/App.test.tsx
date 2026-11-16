@@ -20,8 +20,11 @@ describe('App', () => {
     render(<App />);
     expect(screen.getByRole('heading', { level: 1, name: '梦醒以后，仍有迹可循' })).toBeInTheDocument();
     expect(document.querySelector('.watercolor-tide .wash-canvas')).toBeInTheDocument();
-    expect(document.querySelector('.wash-shot img')).toHaveAttribute('src', '/dreamtide-website/media/刻梦.jpg');
-    expect(screen.getAllByRole('button', { name: /前往/ })).toHaveLength(6);
+    expect(document.querySelector('.wash-shot.has-frame img')).toHaveAttribute('src', '/dreamtide-website/media/app/home-cluster.webp');
+    expect(document.querySelectorAll('.wash-lens')).toHaveLength(10);
+    expect(document.querySelectorAll('.wash-shot')).toHaveLength(15);
+    expect(document.querySelector('.watercolor-tide img[src*="/media/"]:not([src*="/media/app/"])')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /前往/ })).toHaveLength(8);
     expect(screen.getByRole('button', { name: '前往梦潮' })).toHaveAttribute('aria-current', 'step');
     expect(document.querySelector('#site-navigation a[href="#/features"]')).toHaveTextContent('功能');
     expect(document.querySelector('#site-navigation a[href="#/download"]')).toHaveTextContent('下载');
@@ -34,14 +37,21 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: '前往刻梦' })).toHaveAttribute('aria-current', 'step');
   });
 
+  it('turns only one page for a single trackpad swipe', async () => {
+    render(<App />);
+    const stage = document.querySelector('.wash-stage')!;
+    for (let i = 0; i < 12; i++) fireEvent.wheel(stage, { deltaY: 40 });
+    await waitFor(() => expect(screen.getByRole('button', { name: '前往刻梦' })).toHaveAttribute('aria-current', 'step'));
+  });
+
   it('shows and hides the steps for a screenshot', async () => {
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: '前往刻梦' }));
-    fireEvent.click(screen.getByRole('button', { name: '展开写下梦境说明' }));
-    expect(screen.getByText('写下梦境正文。')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '收起写下梦境说明' })).toHaveAttribute('aria-expanded', 'true');
-    fireEvent.click(screen.getByRole('button', { name: '收起写下梦境说明' }));
-    await waitFor(() => expect(screen.queryByText('写下梦境正文。')).not.toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: '展开刻梦说明 · 写到一半' }));
+    expect(screen.getByText('写下梦境正文，选好梦发生的日期。')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '收起刻梦说明 · 写到一半' })).toHaveAttribute('aria-expanded', 'true');
+    fireEvent.click(screen.getByRole('button', { name: '收起刻梦说明 · 恢复暂存' }));
+    await waitFor(() => expect(screen.queryByText('写下梦境正文，选好梦发生的日期。')).not.toBeInTheDocument());
   });
 
   it('links the download chapter somewhere useful without naming where the file is hosted', () => {
@@ -55,22 +65,23 @@ describe('App', () => {
   it('shows one block per App area and only uses galleries for multiple media', () => {
     render(<App />);
     openPage('#/app');
-    expect(document.querySelectorAll('.app-section')).toHaveLength(6);
-    expect(document.querySelectorAll('.app-section__media--single')).toHaveLength(4);
-    expect(document.querySelectorAll('.app-section__gallery')).toHaveLength(2);
-    expect(screen.getAllByRole('tab')).toHaveLength(6);
-    expect(document.querySelectorAll('.app-section__media img, .app-section__media video')).toHaveLength(6);
-    fireEvent.click(screen.getByRole('tab', { name: /春梦了无痕/ }));
-    expect(document.querySelector('video[src$="/media/春梦了无痕-web.mp4"]')).toBeInTheDocument();
+    expect(document.querySelectorAll('.app-section')).toHaveLength(7);
+    expect(document.querySelectorAll('.app-section__media--single')).toHaveLength(1);
+    expect(document.querySelectorAll('.app-section__gallery')).toHaveLength(6);
+    expect(screen.getAllByRole('tab')).toHaveLength(24);
+    expect(document.querySelectorAll('.app-section__media img')).toHaveLength(7);
+    expect(document.querySelector('.app-section__media video')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: /恢复暂存/ }));
+    expect(document.querySelector('img[src$="/media/app/write-restore.webp"]')).toBeInTheDocument();
   });
 
   it('opens a styled image and explanation page from an App screenshot', () => {
     render(<App />);
     openPage('#/app');
-    fireEvent.click(screen.getByRole('button', { name: '展开刻梦书写图文说明' }));
+    fireEvent.click(screen.getByRole('button', { name: '展开空白页图文说明' }));
     const detail = screen.getByRole('dialog', { name: '刻梦书写页图文说明' });
     expect(detail).toHaveTextContent('趁细节还清晰，写下梦境正文');
-    expect(detail.querySelector('img')).toHaveAttribute('src', '/dreamtide-website/media/刻梦.jpg');
+    expect(detail.querySelector('img')).toHaveAttribute('src', '/dreamtide-website/media/app/write-blank.webp');
     fireEvent.click(screen.getByRole('button', { name: '返回刻梦书写页' }));
     expect(screen.queryByRole('dialog', { name: '刻梦书写页图文说明' })).not.toBeInTheDocument();
   });
@@ -80,10 +91,10 @@ describe('App', () => {
     openPage('#/app');
     const install = screen.getByRole('heading', { name: '下载并安装梦潮' }).closest('section');
     expect(install?.querySelector('.download-panel')).toBeInTheDocument();
-    expect(document.querySelectorAll('.app-guide')).toHaveLength(6);
+    expect(document.querySelectorAll('.app-guide')).toHaveLength(7);
     expect(document.querySelectorAll('.app-guide__group')).toHaveLength(11);
-    expect(screen.getByRole('heading', { name: '个人账号与设置' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '“注”与 AI 释梦' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '「我的」面板' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '「注记」与 AI 释梦' })).toBeInTheDocument();
 
     const homeSection = document.querySelector('#app-section-01');
     const guide = homeSection?.querySelector('details');

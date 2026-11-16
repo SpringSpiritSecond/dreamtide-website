@@ -101,7 +101,7 @@
 .app-section__index { margin-bottom: 1.7rem; }
 .app-section__index span { color: rgba(49, 95, 115, .35); }
 .app-section__copy > p { max-width: 29rem; }
-.app-section__media .media-frame { box-shadow: 0 22px 56px rgba(36, 67, 68, .12); }
+.app-section__media .media-frame { box-shadow: none; }
 .app-gallery__tabs button:hover, .app-gallery__controls button:hover { background: rgba(255, 255, 255, .82); }
 .app-guide { border-bottom: 0; }
 
