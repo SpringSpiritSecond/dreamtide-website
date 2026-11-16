@@ -2,14 +2,7 @@
 html:has(.watercolor-tide) { overflow: hidden; }
 /* Ink matches the App's own ink so text and screens read as one piece. */
 body:has(.watercolor-tide) { --wash-ink: #1b2957; --wash-ink-soft: #55608a; }
-body:has(.watercolor-tide) .site-footer { display: none; }
-body:has(.watercolor-tide) .site-header {
-  top: clamp(24px, 3.6vh, 34px); left: clamp(16px, 6vw, 112px); z-index: 30;
-  width: auto; min-height: 0; padding: 0; transform: none;
-  border: 0; border-radius: 0; background: transparent; box-shadow: none; backdrop-filter: none;
-}
-body:has(.watercolor-tide) .site-header .site-nav,
-body:has(.watercolor-tide) .site-header .menu-button { display: none; }
+body:has(.watercolor-tide) .site-header { top: clamp(24px, 3.6vh, 34px); left: clamp(16px, 6vw, 112px); z-index: 30; }
 body:has(.watercolor-tide) .site-header .brand span,
 body:has(.watercolor-tide) .site-header .brand small {
   color: var(--wash-ink); font-size: 1rem; font-weight: 500; letter-spacing: .04em; text-transform: none;
@@ -40,10 +33,6 @@ body:has(.watercolor-tide) .site-header .brand small {
 .wash-copy p, .wash-copy ul { margin: 0; font-size: clamp(15px, 1.25vw, 18px); line-height: 1.95; color: var(--wash-ink-soft); max-width: 22em; }
 .wash-copy ul { padding-left: 1.1em; }
 .wash-copy ul li::marker { color: var(--wash-tone, #d6688a); }
-.wash-copy__guide {
-  display: inline-flex; align-items: center; gap: .35em; margin-top: 1.4em;
-  color: var(--wash-ink); font-size: 15px; text-decoration: none; border-bottom: 1px solid currentColor;
-}
 
 /*
  * Each chapter is a small composition: phones laid on the paper at slight angles, the main one inside a

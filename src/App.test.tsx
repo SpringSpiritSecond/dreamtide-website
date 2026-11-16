@@ -21,13 +21,14 @@ describe('App', () => {
     expect(screen.getByRole('heading', { level: 1, name: '梦醒以后，仍有迹可循' })).toBeInTheDocument();
     expect(document.querySelector('.watercolor-tide .wash-canvas')).toBeInTheDocument();
     expect(document.querySelector('.wash-shot.has-frame img')).toHaveAttribute('src', '/dreamtide-website/media/app/home-cluster.webp');
-    expect(document.querySelectorAll('.wash-lens')).toHaveLength(10);
-    expect(document.querySelectorAll('.wash-shot')).toHaveLength(15);
+    expect(document.querySelectorAll('.wash-lens')).toHaveLength(5);
+    expect(document.querySelectorAll('.wash-shot')).toHaveLength(12);
     expect(document.querySelector('.watercolor-tide img[src*="/media/"]:not([src*="/media/app/"])')).not.toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: /前往/ })).toHaveLength(8);
+    expect(screen.getAllByRole('button', { name: /前往/ })).toHaveLength(6);
+    expect(document.querySelector('.watercolor-tide')).not.toHaveTextContent(/手机里|这台设备|本地/);
     expect(screen.getByRole('button', { name: '前往梦潮' })).toHaveAttribute('aria-current', 'step');
-    expect(document.querySelector('#site-navigation a[href="#/features"]')).toHaveTextContent('功能');
-    expect(document.querySelector('#site-navigation a[href="#/download"]')).toHaveTextContent('下载');
+    expect(document.querySelector('.site-header a[href="#/"]')).toHaveTextContent('梦潮');
+    expect(document.querySelector('#site-navigation')).not.toBeInTheDocument();
   });
 
   it('moves to the next chapter when scrolling down', async () => {
@@ -57,58 +58,40 @@ describe('App', () => {
   it('links the download chapter somewhere useful without naming where the file is hosted', () => {
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: '前往下载' }));
-    expect(screen.getByRole('link', { name: /下载 Android 版/ })).toHaveAttribute('href', '#/download');
-    expect(screen.getByRole('link', { name: /功能与使用说明/ })).toHaveAttribute('href', '#/app');
+    expect(screen.getByRole('link', { name: /下载 Android 版/ })).toHaveAttribute('href', 'https://github.com/SpringSpiritSecond/dreamtide-website/releases');
+    expect(screen.queryByRole('link', { name: /功能与使用说明/ })).not.toBeInTheDocument();
     expect(document.querySelector('.watercolor-tide')).not.toHaveTextContent(/GitHub|Release|安装包/);
   });
 
-  it('shows one block per App area and only uses galleries for multiple media', () => {
+  it('opens on the download chapter from an old download link', () => {
+    window.location.hash = '#/download';
     render(<App />);
-    openPage('#/app');
-    expect(document.querySelectorAll('.app-section')).toHaveLength(7);
-    expect(document.querySelectorAll('.app-section__media--single')).toHaveLength(1);
-    expect(document.querySelectorAll('.app-section__gallery')).toHaveLength(6);
-    expect(screen.getAllByRole('tab')).toHaveLength(24);
-    expect(document.querySelectorAll('.app-section__media img')).toHaveLength(7);
-    expect(document.querySelector('.app-section__media video')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('tab', { name: /恢复暂存/ }));
-    expect(document.querySelector('img[src$="/media/app/write-restore.webp"]')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: '下载梦潮' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '前往下载' })).toHaveAttribute('aria-current', 'step');
+    expect(window.location.hash).toBe('');
   });
 
-  it('opens a styled image and explanation page from an App screenshot', () => {
-    render(<App />);
-    openPage('#/app');
-    fireEvent.click(screen.getByRole('button', { name: '展开空白页图文说明' }));
-    const detail = screen.getByRole('dialog', { name: '刻梦书写页图文说明' });
-    expect(detail).toHaveTextContent('趁细节还清晰，写下梦境正文');
-    expect(detail.querySelector('img')).toHaveAttribute('src', '/dreamtide-website/media/app/write-blank.webp');
-    fireEvent.click(screen.getByRole('button', { name: '返回刻梦书写页' }));
-    expect(screen.queryByRole('dialog', { name: '刻梦书写页图文说明' })).not.toBeInTheDocument();
+  it('shows the home page for the old features and guide addresses', () => {
+    for (const route of ['#/app', '#/features', '#/guide']) {
+      window.location.hash = route;
+      const { unmount } = render(<App />);
+      expect(screen.getByRole('heading', { level: 1, name: '梦醒以后，仍有迹可循' })).toBeInTheDocument();
+      expect(document.querySelector('.app-deck')).not.toBeInTheDocument();
+      expect(window.location.hash).toBe('');
+      unmount();
+    }
   });
 
-  it('keeps installation and all guide content on the App page', () => {
+  it('follows a link to the download chapter while the page is open', async () => {
     render(<App />);
-    openPage('#/app');
-    const install = screen.getByRole('heading', { name: '下载并安装梦潮' }).closest('section');
-    expect(install?.querySelector('.download-panel')).toBeInTheDocument();
-    expect(document.querySelectorAll('.app-guide')).toHaveLength(7);
-    expect(document.querySelectorAll('.app-guide__group')).toHaveLength(11);
-    expect(screen.getByRole('heading', { name: '「我的」面板' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '「注记」与 AI 释梦' })).toBeInTheDocument();
-
-    const homeSection = document.querySelector('#app-section-01');
-    const guide = homeSection?.querySelector('details');
-    expect(guide).not.toHaveAttribute('open');
-    fireEvent.click(homeSection!.querySelector('summary')!);
-    expect(guide).toHaveAttribute('open');
+    openPage('#/download');
+    await waitFor(() => expect(screen.getByRole('button', { name: '前往下载' })).toHaveAttribute('aria-current', 'step'));
   });
 
-  it('skips to App content without changing the hash route', () => {
+  it('skips to the page content without changing the address', () => {
     render(<App />);
-    openPage('#/app');
     fireEvent.click(screen.getByRole('link', { name: '跳到主要内容' }));
-    expect(window.location.hash).toBe('#/app');
+    expect(window.location.hash).toBe('#/');
     expect(document.activeElement).toBe(document.getElementById('main-content'));
-    expect(document.querySelector('.app-deck')).toBeInTheDocument();
   });
 });

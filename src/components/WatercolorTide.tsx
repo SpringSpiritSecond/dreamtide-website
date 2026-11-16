@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { ArrowRight } from 'lucide-react';
+import { RELEASES_URL } from '../lib/githubRelease';
 import type { ReleaseState } from '../lib/githubRelease';
 import { COMPOSE_ASPECT, composeBox, createWatercolorTide, layoutFor } from '../lib/watercolorTide';
 import type { WashChapter, WatercolorTide as Engine } from '../lib/watercolorTide';
@@ -35,7 +35,7 @@ const lens = (s: number, fx: number, fy: number, zoom: number, x: number, y: num
 // Pieces are listed back to front.
 const chapters: readonly Chapter[] = [
   { key: 'welcome', name: '梦潮', title: '梦醒以后，\n仍有迹可循',
-    lines: ['梦潮是一款记录与回看梦境的 Android 应用。', '写下、整理、回看，都只存在你的手机里。'],
+    lines: ['梦潮是一款记录与回看梦境的 Android 应用。', '醒来时写下，过些日子再慢慢翻回去看。'],
     screens: [
       screen('home-cluster', '首页 · 聚', '梦潮首页的「聚」排布：梦里的词浮成泡印，下面是本周日期和刻梦、观梦两个入口', 739, 1600),
       screen('home-date', '首页 · 字', '梦潮首页的「字」排布：大字显示今天的日期和昨晚的梦', 739, 1600),
@@ -54,49 +54,30 @@ const chapters: readonly Chapter[] = [
     detail: ['写下梦境正文，选好梦发生的日期。', '点「暂存」先存草稿，下次进来接着写。', '点「保存」，这场梦就正式记下了。'],
     shots: [{ w: 718, h: 1556 }],
     pal: palette('#ec6f93', '#ee9440', '#f2cf6b', '#86b443', '#8a9ae0'), deep: [170, 50, 80] },
-  { key: 'record', name: '梦的层次', title: '梦的层次', lines: ['保存之后，梦里的词会浮成泡印。', '再补上情绪、标签和分类，也能写注记。'],
+  { key: 'record', name: '梦的层次', title: '梦的层次', lines: ['保存之后，梦里的词会浮成泡印。', '补上情绪和标签，写下注记，也能把梦里的人名遮起来。'],
     screens: [
       screen('read', '读一条梦', '读一条梦：标题、日期、梦里的词浮成泡印，下面是正文和分享、编辑、标隐注、释梦等操作', 718, 1556),
       screen('tag', '标记', '「标记」工具：在正文下方点选情绪、标签和分类', 718, 1556),
+      screen('privacy-on', '遮住人名', '隐藏打开之后的正文：梦里的人名被墨迹遮住', 718, 1556),
     ],
-    pieces: [phone(1, .68, .46, .7, 6), phone(0, .33, .52, .84, -2.5, true), lens(0, .42, .2, 1.9, .1, .22, .32, -8), lens(1, .4, .82, 1.9, .82, .72, .3, 6)],
-    detail: ['读梦时，底部是分享、编辑、标记、隐藏、注记和释梦。', '「标记」在正文下方补上情绪、标签和分类。', '「注记」写下当时的感受，也可以请 AI 释梦。'],
+    pieces: [phone(1, .2, .55, .64, -8), phone(2, .72, .5, .64, 7), phone(0, .45, .5, .82, -1.5, true), lens(0, .42, .2, 1.9, .82, .76, .3, 7)],
+    detail: ['读梦时，底部是分享、编辑、标记、隐藏、注记和释梦。', '「标记」在正文下方补上情绪、标签和分类。', '「隐藏」用墨迹遮住梦里的人名，或藏起私密的片段。'],
     shots: [{ w: 718, h: 1556 }],
     pal: palette('#8a9ae0', '#9fd0ec', '#f09ab5', '#f2cf6b', '#35a39a'), deep: [60, 70, 150] },
-  { key: 'calendar', name: '日历', title: '回到那一天', lines: ['按日子翻回去，看那天做过什么梦。', '有梦的日期下面，留着一枚小泡印。'],
-    screens: [
-      screen('calendar-month', '月历', '日历页：十一月月历，有梦的日期带着泡印，下面列出选中那天的梦', 739, 1600),
-      screen('calendar-day', '当天', '当天页：十一月十日的两场梦', 739, 1600),
-    ],
-    pieces: [phone(1, .68, .46, .7, 6), phone(0, .33, .52, .84, -2.5, true), lens(0, .42, .31, 2.1, .8, .74, .3, 5)],
-    detail: ['在月历上点一个日期，下面列出那天的梦。', '点日期标题，打开那一天的梦境页。', '「再记一场梦」会记在选中的那一天。'],
-    shots: [{ w: 739, h: 1600 }],
-    pal: palette('#4f9fd0', '#8fd06a', '#2f8f8f', '#9fd0ec', '#f09ab5'), deep: [30, 80, 130] },
-  { key: 'view', name: '观梦', title: '观梦', lines: ['过去的梦都在「观梦」：按时间一条条看，', '或者换成词云，看哪些词反复出现。'],
+  { key: 'view', name: '观梦', title: '观梦', lines: ['想回看时，按日子翻，或者按时间一条条看；', '也可以换成词云，看哪些词反复出现。'],
     screens: [
       screen('view-records', '记录', '观梦的记录：标题下切换记录和词云，梦按月份排列，每条有标题、摘录和标签'),
+      screen('calendar-month', '日历', '日历：十一月月历，有梦的日期带着泡印，下面列出选中那天的梦', 739, 1600),
       screen('view-cloud', '词云', '观梦的词云：反复出现的词浮成大小不同的泡印'),
     ],
-    pieces: [phone(1, .68, .5, .72, 5), phone(0, .32, .5, .84, -3, true), lens(0, .3, .2, 2, .1, .2, .3, 7), lens(1, .48, .4, 1.8, .84, .74, .3, -7)],
-    detail: ['标题下切换「记录」和「词云」，筛选条件两边通用。', '用搜索和筛选，按情绪、人物、标签或时间缩小范围。', '在词云里点一个词，下面列出提到它的梦。'],
+    pieces: [phone(1, .2, .55, .64, -8), phone(2, .72, .5, .64, 7), phone(0, .45, .5, .82, -1.5, true), lens(2, .48, .4, 1.8, .82, .76, .3, -7)],
+    detail: ['标题下切换「记录」和「词云」，筛选条件两边通用。', '在日历上点一个日期，下面列出那天的梦。', '在词云里点一个词，下面列出提到它的梦。'],
     shots: [{ w: 702, h: 1520 }],
-    pal: palette('#45b5ae', '#f6b48a', '#e8707a', '#4f9fd0', '#e3bd2f'), deep: [30, 110, 110] },
-  { key: 'private', name: '隐私', title: '只留在\n你的手机里', lines: ['梦只存在这台设备上，没有账号，也不上传。', '梦里的人名和私密片段可以遮住，也能导出备份。'],
-    screens: [
-      screen('privacy-on', '隐私打开之后', '隐私打开之后的正文：梦里的人名被墨迹遮住，私密片段藏起来', 718, 1556),
-      screen('account', '我的', '「我的」面板：隐私、外观和本机数据设置'),
-    ],
-    pieces: [phone(1, .68, .46, .7, 6), phone(0, .33, .52, .84, -2.5, true), lens(0, .78, .46, 2.3, .8, .74, .3, -5), lens(1, .62, .39, 1.7, .86, .16, .26, 6)],
-    detail: ['「不谈人间事」：梦里的人名显示原名、遮住或换成化名。', '「春梦了无痕」：标为私密的文字显示或藏起来。', '「本地备份导出」把梦和设置存成一个文件。'],
-    shots: [{ w: 718, h: 1556 }],
-    pal: palette('#8a9ae0', '#45b5ae', '#f09ab5', '#9fd0ec', '#86b443'), deep: [50, 60, 140] },
-  { key: 'share', name: '分享', title: '带走一场梦', lines: ['把一场梦生成一张长图，先看完整预览。', '满意了再保存到手机，或者发给别人。'],
-    screens: [
-      screen('share', '分享长图', '分享图片预览：一场梦生成的长图，下面是保存图片和分享', 720, 1554),
-      screen('read', '读一条梦', '读一条梦：底部左边是分享', 718, 1556),
-    ],
-    pieces: [phone(1, .3, .47, .7, -6), phone(0, .64, .52, .84, 3, true), lens(0, .5, .38, 1.9, .14, .78, .3, -6)],
-    detail: ['读梦时点「分享」，先生成一张完整的长图。', '点「保存图片」存到手机，或点「分享」发给别人。', '点「关闭」退出预览，什么都不会发出去。'],
+    pal: palette('#4f9fd0', '#45b5ae', '#8fd06a', '#f6b48a', '#e8707a'), deep: [30, 90, 120] },
+  { key: 'share', name: '分享', title: '带走一场梦', lines: ['把一场梦生成一张长图，先看完整预览。', '满意了再保存图片，或者发给别人。'],
+    screens: [screen('share', '分享长图', '分享图片预览：一场梦生成的长图，下面是保存图片和分享', 720, 1554)],
+    pieces: [phone(0, .52, .5, .86, 2.5, true), lens(0, .5, .38, 1.9, .14, .74, .3, -6)],
+    detail: ['读梦时点「分享」，先生成一张完整的长图。', '点「保存图片」存下来，或点「分享」发给别人。', '点「关闭」退出预览，什么都不会发出去。'],
     shots: [{ w: 720, h: 1554 }],
     pal: palette('#f6b48a', '#ec6f93', '#e3bd2f', '#45b5ae', '#8a9ae0'), deep: [170, 82, 50] },
   { key: 'download', name: '下载', title: '下载梦潮', lines: ['目前只有 Android 版，免费使用。', '下载后按手机提示完成安装。'],
@@ -110,8 +91,7 @@ const chapters: readonly Chapter[] = [
  */
 type Route = 'under' | 'over' | 'gap' | 'ring';
 const routes: Record<string, Route> = {
-  welcome: 'under', write: 'over', record: 'gap', calendar: 'under',
-  view: 'gap', private: 'over', share: 'under', download: 'ring',
+  welcome: 'under', write: 'over', record: 'gap', view: 'under', share: 'over', download: 'ring',
 };
 type Box = [number, number, number, number];
 
@@ -169,14 +149,15 @@ const clamp = (value: number, min: number, max: number) => Math.min(max, Math.ma
 const viewport = () => ({ w: window.innerWidth, h: window.innerHeight });
 const rgb = (c: readonly number[]) => `${c[0]}, ${c[1]}, ${c[2]}`;
 
-export function WatercolorTide({ releaseState }: { releaseState: ReleaseState }) {
+/** startAt: chapter key to open on (e.g. 'download'); jumpId changes whenever the address asks to go there again. */
+export function WatercolorTide({ releaseState, startAt = null, jumpId = 0 }: { releaseState: ReleaseState; startAt?: string | null; jumpId?: number }) {
   const stage = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const engine = useRef<Engine | null>(null);
   const foamCanvas = useRef<HTMLCanvasElement>(null);
   const foam = useRef<BubbleTide | null>(null);
   const wheelRef = useRef({ last: 0 });
-  const [active, setActive] = useState(0);
+  const [active, setActive] = useState(() => Math.max(0, chapters.findIndex((item) => item.key === startAt)));
   const [open, setOpen] = useState(false);
   const [size, setSize] = useState(viewport);
   const [reduceMotion] = useState(() => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false);
@@ -285,9 +266,17 @@ export function WatercolorTide({ releaseState }: { releaseState: ReleaseState })
   }, [active, reduceMotion]);
 
   const goTo = (index: number) => { setOpen(false); setActive(index); };
+  // Follow the address when it changes while the page is open (e.g. a link to #/download).
+  const lastJump = useRef(jumpId);
+  useEffect(() => {
+    if (jumpId === lastJump.current) return;
+    lastJump.current = jumpId;
+    setOpen(false);
+    setActive(Math.max(0, chapters.findIndex((item) => item.key === startAt)));
+  }, [jumpId, startAt]);
   const download = releaseState.status === 'ready'
     ? { href: releaseState.release.downloadUrl, file: releaseState.release.fileName, meta: `${releaseState.release.version} · ${releaseState.release.sizeLabel}` }
-    : { href: '#/download', file: undefined, meta: releaseState.status === 'loading' ? '正在读取最新版本' : '查看下载说明' };
+    : { href: RELEASES_URL, file: undefined, meta: releaseState.status === 'loading' ? '正在读取最新版本' : '打开版本列表' };
   const titleLines = chapter.title.split('\n');
   const Heading = active === 0 ? 'h1' : 'h2';
   const [bx, by, , bh] = composeBox(size.w, size.h);
@@ -302,7 +291,6 @@ export function WatercolorTide({ releaseState }: { releaseState: ReleaseState })
           {open && chapter.detail ? (
             <ul id={`wash-detail-${chapter.key}`}>{chapter.detail.map((line) => <li key={line}>{line}</li>)}</ul>
           ) : chapter.lines.map((line) => <p key={line}>{line}</p>)}
-          {chapter.key === 'download' && <a className="wash-copy__guide" href="#/app">功能与使用说明 <ArrowRight aria-hidden="true" size={15} /></a>}
         </section>
 
         {chapters.map((item, index) => {
