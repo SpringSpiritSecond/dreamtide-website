@@ -4,6 +4,8 @@ import { ArrowRight } from 'lucide-react';
 import type { ReleaseState } from '../lib/githubRelease';
 import { COMPOSE_ASPECT, composeBox, createWatercolorTide, layoutFor } from '../lib/watercolorTide';
 import type { WashChapter, WatercolorTide as Engine } from '../lib/watercolorTide';
+import { createBubbleTide } from '../lib/bubbleTide';
+import type { BubbleTide, Keepout, Point, TideShape } from '../lib/bubbleTide';
 
 const media = (name: string) => `${import.meta.env.BASE_URL}media/${name}`;
 
@@ -101,6 +103,68 @@ const chapters: readonly Chapter[] = [
     feature: 'cta', pal: palette('#45b5ae', '#ec6f93', '#3c7dc4', '#e3bd2f', '#86b443'), deep: [30, 90, 110] },
 ];
 
+/**
+ * The pigment bubbles follow a curve worked out from where things actually are on the page: they hug the
+ * copy from below, sweep over the title, run down the gap before the phones, or curl round the download
+ * print. Everything on the page that matters (text, screens, close-ups, controls) is kept clear.
+ */
+type Route = 'under' | 'over' | 'gap' | 'ring';
+const routes: Record<string, Route> = {
+  welcome: 'under', write: 'over', record: 'gap', calendar: 'under',
+  view: 'gap', private: 'over', share: 'under', download: 'ring',
+};
+type Box = [number, number, number, number];
+
+function tideShape(route: Route, stage: HTMLElement, index: number, palette: TideShape['palette']): TideShape {
+  const W = stage.clientWidth, H = stage.clientHeight, S = H / 800, mobile = W < 760;
+  const rel = (el: Element): Box => {
+    const a = el.getBoundingClientRect(), b = stage.getBoundingClientRect();
+    return [a.left - b.left, a.top - b.top, a.width, a.height];
+  };
+  // Measure the settled layout: offsets ignore the entrance transforms still running.
+  const at = (el: HTMLElement): Box => [el.offsetLeft, el.offsetTop, el.offsetWidth, el.offsetHeight];
+  const pad = (b: Box, p: number): Box => [b[0] - p, b[1] - p, b[2] + 2 * p, b[3] + 2 * p];
+  const copyEl = stage.querySelector<HTMLElement>('.wash-copy');
+  const copy: Box = copyEl ? rel(copyEl) : [0, 0, 0, 0];
+  const pieces = [...stage.querySelectorAll<HTMLElement>('.wash-shot.is-on, .wash-lens.is-on')].map((el) => pad(at(el), 14 * S));
+  const featureEl = stage.querySelector<HTMLElement>('.wash-feature.is-on');
+  const feature = featureEl ? at(featureEl) : null;
+  const avoid: Keepout[] = [
+    { rect: pad(copy, 14 * S) }, ...pieces.map((rect) => ({ rect })),
+    { rect: [0, 0, 260, 76] },                       // site name
+    { rect: [W / 2 - 150, H - 66, 300, 66] },        // chapter dots
+    { rect: [W - 300, H - 62, 300, 62] },            // hint
+  ];
+  if (feature) avoid.push({ circle: [feature[0] + feature[2] / 2, feature[1] + feature[3] / 2, feature[2] / 2 + 18 * S] });
+
+  const left = copy[0], right = copy[0] + copy[2], top = copy[1], bottom = copy[1] + copy[3];
+  const phonesLeft = pieces.length ? Math.min(...pieces.map((p) => p[0])) : W * .5;
+  const gap = Math.max(right + 20, (right + phonesLeft) / 2);
+  let path: Point[], width: number;
+  if (mobile) {
+    // One band between the copy and the screens, a slow wave across the page.
+    const tops = [...pieces.map((p) => p[1]), ...(feature ? [feature[1]] : [])];
+    const phonesTop = tops.length ? Math.min(...tops) : H * .7;
+    const y = (bottom + phonesTop) / 2;
+    path = [[-10, y + 8], [W * .3, y - 10], [W * .62, y + 8], [W + 10, y - 6]];
+    width = Math.max(10, (phonesTop - bottom) / 2 - 8);
+  } else if (route === 'ring' && feature) {
+    const cx = feature[0] + feature[2] / 2, cy = feature[1] + feature[3] / 2, R = feature[2] / 2 + 60 * S;
+    path = [215, 180, 145, 112, 80, 50].map((deg) => [cx + Math.cos(deg * Math.PI / 180) * R, cy + Math.sin(deg * Math.PI / 180) * R * .92]);
+    width = 34 * S;
+  } else if (route === 'over') {
+    path = [[left + 150, top - 70 * S], [left + (right - left) * .55, top - 48 * S], [gap, top + 20 * S], [gap - 10, H * .58], [gap + 12, H * .9]];
+    width = 30 * S;
+  } else if (route === 'gap') {
+    path = [[gap + 14, H * .06], [gap - 12, H * .3], [gap + 10, H * .54], [gap - 8, H * .78], [gap + 6, H * 1.02]];
+    width = Math.max(18, (phonesLeft - right) / 2 - 10);
+  } else {
+    path = [[left - 40, H * 1.02], [left + (right - left) * .35, bottom + 60 * S], [right - 20, bottom + 24 * S], [gap, bottom - 60 * S], [gap + 8, H * .32], [gap - 6, H * .12]];
+    width = 32 * S;
+  }
+  return { path, width, avoid, palette, seed: index + 1 };
+}
+
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 const viewport = () => ({ w: window.innerWidth, h: window.innerHeight });
 const rgb = (c: readonly number[]) => `${c[0]}, ${c[1]}, ${c[2]}`;
@@ -109,6 +173,8 @@ export function WatercolorTide({ releaseState }: { releaseState: ReleaseState })
   const stage = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const engine = useRef<Engine | null>(null);
+  const foamCanvas = useRef<HTMLCanvasElement>(null);
+  const foam = useRef<BubbleTide | null>(null);
   const wheelRef = useRef({ last: 0 });
   const [active, setActive] = useState(0);
   const [open, setOpen] = useState(false);
@@ -128,6 +194,26 @@ export function WatercolorTide({ releaseState }: { releaseState: ReleaseState })
     window.addEventListener('resize', onResize);
     return () => { tide.dispose(); engine.current = null; window.removeEventListener('resize', onResize); clearTimeout(timer); };
   }, [reduceMotion]);
+
+  useEffect(() => {
+    if (!foamCanvas.current) return;
+    const bubbles = createBubbleTide(foamCanvas.current, reduceMotion);
+    foam.current = bubbles;
+    return () => { bubbles.dispose(); foam.current = null; };
+  }, [reduceMotion]);
+
+  // Re-route the bubbles whenever the chapter or the page size changes, once the new layout is in place.
+  const routed = useRef(false);
+  useEffect(() => {
+    const element = stage.current;
+    if (!element) return;
+    const frame = requestAnimationFrame(() => {
+      foam.current?.resize();
+      foam.current?.set(tideShape(routes[chapter.key], element, active, chapter.pal), !routed.current);
+      routed.current = true;
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [active, chapter, size, open]);
 
   // The very first chapter appears at once; later ones are painted in.
   const painted = useRef(false);
@@ -210,6 +296,7 @@ export function WatercolorTide({ releaseState }: { releaseState: ReleaseState })
     <div className="watercolor-tide">
       <div ref={stage} className={`wash-stage${reduceMotion ? ' is-still' : ''}`}>
         <canvas ref={canvas} className="wash-canvas" aria-hidden="true" />
+        <canvas ref={foamCanvas} className="wash-foam" aria-hidden="true" />
         <section key={`${active}-${open}`} className="wash-copy" aria-live="polite">
           <Heading className="wash-copy__title">{titleLines.map((line) => <span key={line}>{line}</span>)}</Heading>
           {open && chapter.detail ? (

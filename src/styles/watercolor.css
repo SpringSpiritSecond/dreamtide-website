@@ -22,6 +22,9 @@ body:has(.watercolor-tide) .site-header .brand small {
 }
 .wash-canvas { position: absolute; inset: 0; z-index: 0; display: block; width: 100%; height: 100%; }
 
+/* Pigment bubbles over the wash: one full-page layer, routed around the content (src/lib/bubbleTide.ts). */
+.wash-foam { position: absolute; inset: 0; z-index: 1; display: block; width: 100%; height: 100%; pointer-events: none; }
+
 .wash-copy {
   position: absolute; z-index: 3; left: clamp(16px, 6vw, 112px); top: 50%;
   width: min(32vw, 440px); transform: translateY(-50%);
