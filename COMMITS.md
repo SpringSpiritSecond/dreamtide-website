@@ -163,7 +163,15 @@
 
 ## 待提交
 
-- 暂无。
+### 下载按钮直接下载网站自带的最新 APK
+
+**产品 / 工程**
+
+- 部署时由 `scripts/bundle-latest-apk.mjs` 把本仓库最新 Release 的 APK 复制进网站（`download/DreamTide.apk`，
+  版本信息在 `download/latest.json`）；发布新 Release 会自动触发部署。
+- 下载按钮从网站自己的地址直接下载，文件名带版本号；版本号和大小也从网站读取，访客浏览器不再请求
+  GitHub API，避免读取失败或频率限制时跳到版本列表。网站没有这份 APK 时才退回 GitHub API。
+- 更新单元测试、端到端测试、README 与发布说明。
 
 ## 后续维护规则
 

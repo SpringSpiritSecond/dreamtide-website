@@ -15,10 +15,12 @@
 2. 在私有仓库创建并发布标签为 `v<version>` 的 GitHub Release。
 3. 私有仓库的 `publish-android-release.yml` 自动测试、构建并签名 APK。
 4. 工作流将同标签 Release、APK 和 `update-manifest.json` 镜像到本公开仓库。
-5. 官网通过本仓库 Latest Release API 自动显示最新 APK。
+5. 官网部署时把最新 APK 复制进网站，下载按钮直接下载，并显示版本号和大小。
 6. App 通过 Latest Release 中的 `update-manifest.json` 自动检查更新。
 
-官网不访问私有仓库，也不需要重新构建才能识别新的公开 Release。
+官网不访问私有仓库。新的公开 Release 发布后会自动触发官网部署（`deploy-pages.yml` 的 `release: published`），
+部署时把 APK 复制进网站，下载按钮就从网站自己的地址直接下载新版本。如果某次没有自动部署，在 Actions 里手动
+运行 Deploy GitHub Pages 即可。
 
 ## 公开 Release 文件
 

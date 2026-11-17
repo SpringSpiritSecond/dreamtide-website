@@ -11,4 +11,11 @@ export default tseslint.config(
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
   },
+  {
+    // Build scripts run in Node during deploy.
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      globals: { process: 'readonly', console: 'readonly', fetch: 'readonly', Buffer: 'readonly' },
+    },
+  },
 );

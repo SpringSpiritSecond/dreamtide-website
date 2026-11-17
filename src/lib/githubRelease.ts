@@ -2,6 +2,10 @@ export const RELEASES_URL =
   'https://github.com/SpringSpiritSecond/dreamtide-website/releases';
 export const LATEST_RELEASE_API =
   'https://api.github.com/repos/SpringSpiritSecond/dreamtide-website/releases/latest';
+// The deploy copies the latest APK into the site (scripts/bundle-latest-apk.mjs), so it downloads from the
+// site's own address with one click and without the GitHub API's per-visitor rate limit.
+export const BUNDLED_APK_URL = `${import.meta.env.BASE_URL}download/DreamTide.apk`;
+export const BUNDLED_INFO_URL = `${import.meta.env.BASE_URL}download/latest.json`;
 
 export type PublicRelease = {
   version: string;
@@ -55,9 +59,42 @@ function isApkAsset(asset: GithubAsset): asset is ApkAsset {
   );
 }
 
+const dateLabel = (value: unknown) => {
+  const date = typeof value === 'string' ? new Date(value) : null;
+  return date && !Number.isNaN(date.valueOf())
+    ? new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }).format(date)
+    : '最近发布';
+};
+
+type BundledInfo = { version?: unknown; fileName?: unknown; size?: unknown; publishedAt?: unknown };
+
+/** The APK copied into the site at deploy time, if there is one. */
+async function loadBundledRelease(fetcher: typeof fetch): Promise<ResolvedReleaseState | null> {
+  try {
+    const response = await fetcher(BUNDLED_INFO_URL, { cache: 'no-cache' });
+    if (!response.ok) return null;
+    const info = (await response.json()) as BundledInfo;
+    if (typeof info.fileName !== 'string' || typeof info.size !== 'number') return null;
+    return {
+      status: 'ready',
+      release: {
+        version: typeof info.version === 'string' ? info.version : '最新版',
+        downloadUrl: BUNDLED_APK_URL,
+        fileName: info.fileName,
+        sizeLabel: formatBytes(info.size),
+        publishedLabel: dateLabel(info.publishedAt),
+      },
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function loadLatestRelease(
   fetcher: typeof fetch = fetch,
 ): Promise<ResolvedReleaseState> {
+  const bundled = await loadBundledRelease(fetcher);
+  if (bundled) return bundled;
   try {
     const response = await fetcher(LATEST_RELEASE_API, {
       headers: { Accept: 'application/vnd.github+json' },
@@ -80,11 +117,6 @@ export async function loadLatestRelease(
       return { status: 'unavailable', reason: 'no-apk' };
     }
 
-    const date =
-      typeof payload.published_at === 'string'
-        ? new Date(payload.published_at)
-        : null;
-
     return {
       status: 'ready',
       release: {
@@ -93,15 +125,7 @@ export async function loadLatestRelease(
         downloadUrl: apk.browser_download_url,
         fileName: apk.name,
         sizeLabel: formatBytes(apk.size),
-        publishedLabel:
-          date && !Number.isNaN(date.valueOf())
-            ? new Intl.DateTimeFormat('zh-CN', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                timeZone: 'UTC',
-              }).format(date)
-            : '最近发布',
+        publishedLabel: dateLabel(payload.published_at),
       },
     };
   } catch {

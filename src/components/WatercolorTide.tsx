@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { RELEASES_URL } from '../lib/githubRelease';
+import { BUNDLED_APK_URL, RELEASES_URL } from '../lib/githubRelease';
 import type { ReleaseState } from '../lib/githubRelease';
 import { COMPOSE_ASPECT, composeBox, createWatercolorTide, layoutFor } from '../lib/watercolorTide';
 import type { WashChapter, WatercolorTide as Engine } from '../lib/watercolorTide';
@@ -276,7 +276,11 @@ export function WatercolorTide({ releaseState, startAt = null, jumpId = 0 }: { r
   }, [jumpId, startAt]);
   const download = releaseState.status === 'ready'
     ? { href: releaseState.release.downloadUrl, file: releaseState.release.fileName, meta: `${releaseState.release.version} · ${releaseState.release.sizeLabel}` }
-    : { href: RELEASES_URL, file: undefined, meta: releaseState.status === 'loading' ? '正在读取最新版本' : '打开版本列表' };
+    // Before the version is known the deployed site still serves its own copy of the latest APK, so a click
+    // downloads straight away; only if nothing could be found does it open the version list.
+    : releaseState.status === 'loading' && import.meta.env.PROD
+      ? { href: BUNDLED_APK_URL, file: 'DreamTide.apk', meta: '正在读取最新版本' }
+      : { href: RELEASES_URL, file: undefined, meta: releaseState.status === 'loading' ? '正在读取最新版本' : '打开版本列表' };
   const titleLines = chapter.title.split('\n');
   const Heading = active === 0 ? 'h1' : 'h2';
   const [bx, by, , bh] = composeBox(size.w, size.h);

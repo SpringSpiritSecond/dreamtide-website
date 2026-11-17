@@ -3,6 +3,9 @@ name: Deploy GitHub Pages
 on:
   push:
     branches: [main]
+  # A new release is copied into the site, so the download button serves the new APK right away.
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -29,6 +32,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm test:run
       - run: pnpm build
+      - name: Bundle the latest Android release into the site
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/bundle-latest-apk.mjs dist
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

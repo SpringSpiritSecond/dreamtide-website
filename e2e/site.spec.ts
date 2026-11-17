@@ -17,7 +17,7 @@ test('download chapter offers the latest Android build', async ({ page }) => {
   await page.goto('');
   await page.getByRole('button', { name: '前往下载' }).click();
   await expect(page.getByRole('heading', { name: '下载梦潮' })).toBeVisible();
-  await expect(page.getByRole('link', { name: /下载 Android 版/ })).toHaveAttribute('href', /github\.com\/SpringSpiritSecond\/dreamtide-website\/releases/);
+  await expect(page.getByRole('link', { name: /下载 Android 版/ })).toHaveAttribute('href', /download\/DreamTide\.apk$|github\.com\/SpringSpiritSecond\/dreamtide-website\/releases/);
 });
 
 test('old features, guide and download addresses land on the home page', async ({ page }) => {
